@@ -6,6 +6,7 @@ import TbAdministrarSedes from "../tablas/tbAdministrarSedes";
 import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
 import { saveHeadquarterApi } from "../../api";
 import { toBase64 } from "../../util";
+import Swal from 'sweetalert2';
 
 
 const style = {
@@ -20,6 +21,35 @@ const style = {
     boxShadow: 24,
     p: 4,
 };
+var SaveComplete=()=>{
+    Swal.fire({
+        title: 'La sede se creo con exito',
+        icon: 'success',
+    })
+}
+
+var SaveFail=()=>{
+    Swal.fire({
+        title: 'La sede no se creo',
+        icon: 'warning',
+    })
+}
+
+var NombIncomplete=()=>{
+    Swal.fire({
+        title: 'Coloque el nombre de la sede',
+        icon: 'warning',
+        target: '#custom-target2',
+    })
+}
+
+var DirIncomplete=()=>{
+    Swal.fire({
+        title: 'Coloque la direccion de la sede',
+        icon: 'warning',
+        target: '#custom-target2',
+    })
+}
 
 class AdministrarSedes extends React.Component<{ navigate: NavigateFunction }, any>{
     constructor(props: any) {
@@ -34,6 +64,7 @@ class AdministrarSedes extends React.Component<{ navigate: NavigateFunction }, a
             imagenFile: ""
         }
     }
+    
     handleChangeSede = () => {
         this.setState({
             abrirSede: true
@@ -56,59 +87,67 @@ class AdministrarSedes extends React.Component<{ navigate: NavigateFunction }, a
         });
     }
     guardarSede = async () => {
+        if (this.state.nombre === "") {
+            NombIncomplete();
+            return;
+        }
+
+        if (this.state.direccion === "") {
+            DirIncomplete();
+            return;
+        }
+        
         let data = {
             name: this.state.nombre,
             tlfNumber: this.state.telefono,
             address: this.state.direccion,
             email: this.state.correo
-        }
-        if (this.state.imagen != "") {
+        };
+    
+        if (this.state.imagen !== "") {
             let daton = {
                 ...data,
                 file: {
                     base64: await toBase64(this.state.imagenFile),
                     path: this.state.imagen.split("\\")[this.state.imagen.split("\\").length - 1]
                 }
-            }
+            };
             saveHeadquarterApi(daton).then((x: any) => {
                 if (x.status) {
-                    alert(x.message.text)
+                    SaveComplete();
                     this.setState({
                         abrirSede: false
-                    })
-                    window.location.href = '/apps/headquarters'
+                    });
+                    window.location.href = '/apps/headquarters';
                 } else {
-                    alert(x.message.text)
+                    SaveFail();
                     this.setState({
                         abrirSede: false
-                    })
+                    });
                 }
-            })
+            });
         } else {
             saveHeadquarterApi(data).then((x: any) => {
                 if (x.status) {
-                    alert(x.message.text)
+                    SaveComplete();
                     this.setState({
                         abrirSede: false
-                    })
-                    window.location.href = '/apps/headquarters'
+                    });
+                    window.location.href = '/apps/headquarters';
                 } else {
-                    alert(x.message.text)
+                    SaveFail();
                     this.setState({
                         abrirSede: false
-                    })
+                    });
                 }
-            })
+            });
         }
-
-
-
-
     }
+    
     render() {
         return (
 
-            <div className='tabla-componente'>
+            <div className='tabla-componente' style={{ maxHeight:"950", overflow: "auto"}}>
                 <Contenido>
                     <Grid container style={{ alignItems: "center" }}>
                         <Grid item>
@@ -128,6 +167,7 @@ class AdministrarSedes extends React.Component<{ navigate: NavigateFunction }, a
                     </div>
                     <div>
                         <Modal
+                            id="custom-target2"
                             keepMounted
                             open={this.state.abrirSede}
                             onClose={this.handleChangeCerrarSede}

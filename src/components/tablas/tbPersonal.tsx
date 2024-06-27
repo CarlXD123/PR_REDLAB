@@ -12,14 +12,17 @@ import Paper from '@mui/material/Paper';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
 import { visuallyHidden } from '@mui/utils';
-import { getEmployeeApi, getFilterEmployeesApi, getPagedEmployeesApi } from '../../api';
+import { getEmployeeApi, getFilterEmployeesApi, deleteEmployeeApi,  getPagedEmployeesApi } from '../../api';
 import { Button, InputLabel, Modal, Tab, TextField, Tooltip } from '@mui/material';
 import { makeStyles } from '@mui/styles';
 import { Link } from 'react-router-dom';
 import { Grid } from '@mui/material';
-import { TabContext, TabList, TabPanel } from '@material-ui/lab';
+import { TabContext, TabList, TabPanel} from '@material-ui/lab';
+import { Tabs } from '@mui/material';
 import PersonSearchRoundedIcon from '@mui/icons-material/PersonSearchRounded';
 import ModeEditRoundedIcon from '@mui/icons-material/ModeEditRounded';
+import DeleteIcon from '@mui/icons-material/Delete';
+import Swal from 'sweetalert2';
 
 interface Data {
   dni: string;
@@ -233,6 +236,8 @@ export default function TbPersonal({ texto, opcion }: any) {
   const [rol, setRol] = React.useState<any>('');
   const [sede, setSede] = React.useState<any>('');
 
+  const [id, setId] = React.useState<any>("");
+
   //#region handle Crear Colegiatura
   const handleOpenColegiatura = (obj: any) => {
     setAbrirColegiatura(true);
@@ -330,6 +335,7 @@ export default function TbPersonal({ texto, opcion }: any) {
 
 
             id: d.person.id,
+            userid2: d.person.UserId,
             userid: d.user.id
           })
         });
@@ -375,6 +381,7 @@ export default function TbPersonal({ texto, opcion }: any) {
 
 
             id: d.person.id,
+            userid2: d.person.UserId,
             userid: d.user.id
           })
         });
@@ -395,6 +402,62 @@ export default function TbPersonal({ texto, opcion }: any) {
     setValues(newValue);
   };
 
+  const DeletePersonal=()=>{
+    Swal.fire({
+        title: 'Personal eliminado correctamente!!!',
+        icon: 'success',
+      })
+  }
+
+  rows.sort((a: any, b: any) => (
+    a.nombre > b.nombre ? 1 : a.nombre < b.nombre ? -1 : 0)
+  )
+
+
+  let aux = rows
+  const handleDelete = async (id: any, nombre: any) => {
+    var DeleteEmployee=()=>{
+    Swal
+    .fire({
+        title: "Desea eliminar al empleado "+nombre+"?",
+        showCancelButton: true,
+        cancelButtonColor: '#0C3DA7',
+        confirmButtonColor: '#FB0909',
+        confirmButtonText: "Sí",
+        cancelButtonText: "No",
+    })
+    .then(resultado => {
+        if (resultado.value) {
+            // Hicieron click en "Sí"
+            try {
+              setRows([])
+              //await sleep(50)
+               
+              setRows(aux)
+
+              deleteEmployeeApi(id).then((x: any) => {
+               
+                //setId(x.data.name)
+              });
+
+          
+              setRows(aux.filter((row: any) => row.userid2 !== id));
+        
+            } catch(error) {
+               
+            }
+            DeletePersonal()
+        } else {
+            // Dijeron que no
+        }
+    });
+  }
+   
+  DeleteEmployee()
+
+  };
+
+
   const isSelected = (name: string) => selected.indexOf(name) !== -1;
 
   // Avoid a layout jump when reaching the last page with empty rows.
@@ -407,7 +470,6 @@ export default function TbPersonal({ texto, opcion }: any) {
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
-    maxWidth: "500px",
     margin: "auto",
     bgcolor: 'white',
     border: '1px solid #white',
@@ -417,7 +479,9 @@ export default function TbPersonal({ texto, opcion }: any) {
   };
   return (
     <Box sx={{ width: '100%' }} >
-      <Paper sx={{ width: '100%', mb: 12 }} className="card-table">
+      <br></br>
+      <br></br>
+      <Paper sx={{ width: '100%', mb: 60 }} className="card-table-general">
         <TableContainer>
           <Table
             sx={{ minWidth: 750 }}
@@ -496,6 +560,14 @@ export default function TbPersonal({ texto, opcion }: any) {
                               </Tooltip>
                             </Link>
                           </div>
+
+                          <div style={{ paddingLeft: "5px" }}>
+                            <Tooltip title="Borrar Paciente" followCursor>
+                              <Button onClick={() => handleDelete(row.userid2, row.nombreCompleto)}  variant="contained" className='boton-icon'>
+                                <DeleteIcon />
+                              </Button>
+                            </Tooltip>
+                          </div>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -539,14 +611,14 @@ export default function TbPersonal({ texto, opcion }: any) {
         >
           <Box sx={style}>
             <InputLabel style={{ color: "black", fontFamily: "Quicksand", fontWeight: "500", fontSize: "1.5rem" }} >Detalles del empleado</InputLabel >
-            <TabContext value={values} >
-              <Box >
-                <TabList scrollButtons="auto" variant="scrollable" indicatorColor="primary" textColor="primary" onChange={handleChangeValor}  >
+            <TabContext value={values}>
+              <Box>
+                <Tabs value={values} scrollButtons="auto" indicatorColor="primary" textColor="primary" onChange={handleChangeValor}  >
                   <Tab className="h-64 normal-case" label="Datos personales" value="1" />
                   <Tab className="h-64 normal-case" label="Domicilio" value="2" />
                   <Tab className="h-64 normal-case" label="Profesión" value="3" />
                   <Tab className="h-64 normal-case" label="Usuario" value="4" />
-                </TabList>
+                </Tabs>
               </Box>
               <TabPanel value="1">
                 <Grid container style={{ alignItems: "center" }}>

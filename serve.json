@@ -1,0 +1,10 @@
+{
+    "static": "./front",
+    "routes": [
+      {
+        "match": "^/.*",
+        "serve": "/index.html"
+      }
+    ]
+  }
+  

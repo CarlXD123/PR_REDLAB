@@ -13,6 +13,7 @@ import { visuallyHidden } from '@mui/utils';
 import { editHeadquarterApi, getFilterPatientsApi, getHeadquartersAllApi, getPagedPatientsApi } from '../../api';
 import { Button, Grid, InputLabel, Modal, TextField } from '@mui/material';
 import { toBase64 } from '../../util';
+import Swal from 'sweetalert2';
 
 interface Data {
   name: string;
@@ -206,6 +207,35 @@ export default function TbAdministrarSedes() {
     p: 4,
   };
 
+  var ModifiedSave=()=>{
+    Swal.fire({
+        title: 'Sede actualizada',
+        icon: 'success',
+    })
+  }
+
+  var ModifiedError=()=>{
+    Swal.fire({
+        title: 'Sede no actualizada',
+        icon: 'warning',
+    })
+  }
+
+  var NombIncomplete=()=>{
+    Swal.fire({
+        title: 'Coloque el nombre de la sede',
+        icon: 'warning',
+        target: '#custom-target',
+    })
+}
+
+var DirIncomplete=()=>{
+    Swal.fire({
+        title: 'Coloque la direccion de la sede',
+        icon: 'warning',
+        target: '#custom-target',
+    })
+}
 
   const handleOpenSede = (data: any) => {
     setID(data.id)
@@ -236,6 +266,17 @@ export default function TbAdministrarSedes() {
     setImgFile(event.target.files[0]);
   };
   const guardarSede = async () => {
+
+    if (nombre === "") {
+        NombIncomplete();
+        return;
+    }
+
+    if (direccion === "") {
+       DirIncomplete();
+       return;
+    }
+
     let daton = {
       address: direccion,
       email: correo,
@@ -250,11 +291,11 @@ export default function TbAdministrarSedes() {
       }
       editHeadquarterApi(id, data).then((x: any) => {
         if (x.status) {
-          alert(x.message.text)
+          ModifiedSave()
           setAbrirSede(false)
           window.location.href = '/apps/headquarters'
         } else {
-          alert(x.message.text)
+          ModifiedError()
           setAbrirSede(false)
         }
       })
@@ -269,11 +310,13 @@ export default function TbAdministrarSedes() {
       }
       editHeadquarterApi(id, data).then((x: any) => {
         if (x.status) {
-          alert(x.message.text)
+          //alert(x.message.text)
+          ModifiedSave()
           setAbrirSede(false)
           window.location.href = '/apps/headquarters'
         } else {
-          alert(x.message.text)
+          //alert(x.message.text)
+          ModifiedError()
           setAbrirSede(false)
         }
       })
@@ -282,7 +325,7 @@ export default function TbAdministrarSedes() {
   return (
     <Box sx={{ width: '100%' }}>
       <Paper sx={{ width: '100%', mb: 2, borderRadius: "12px" }}>
-        <TableContainer>
+        <TableContainer style={{maxHeight: 300, overflow: "scroll", overflowX: "scroll"}}>
           <Table
             sx={{ minWidth: 750 }}
             aria-labelledby="tableTitle"
@@ -357,6 +400,7 @@ export default function TbAdministrarSedes() {
       </Paper>
       <div>
         <Modal
+          id="custom-target"
           keepMounted
           open={abrirSede}
           onClose={handleCloseSede}

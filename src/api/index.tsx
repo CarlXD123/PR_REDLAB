@@ -1,9 +1,73 @@
 import { apiFetch } from "./apiFetch";
 
-const PORT_BACKEND = process.env.REACT_APP_PORT_BACKEND || "3000";
+const PORT_BACKEND = process.env.REACT_APP_PORT_BACKEND || "5000";
 const URL_BACKEND = process.env.REACT_APP_API_URL_BACKEND || "http://localhost";
 
 export const API_URL_BACKEND = `${URL_BACKEND}:${PORT_BACKEND}/api/`;
+
+export const modeloML = async (assay: string, result: number, time_range: string, gender: string, age: number) => {
+  try {
+    const response = await fetch("https://modelml.onrender.com/api/predict/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        assay, // Asegúrate de que esto sea una cadena como "TSH"
+        result, // Asegúrate de que esto sea un número
+        // Agrega las otras propiedades si la API las necesita
+        time_range,
+        gender,
+        age
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error al realizar la solicitud al modelo ML:", error);
+    throw error; // Esto es para propagar el error a quien llama la función
+  }
+};
+
+
+export const modeloMLAI = async (assay: string, result: number, time_range: string, gender: string, age: number) => {
+  try {
+    // Crear el objeto con las propiedades necesarias
+    const requestBody = {
+      prompt: `assay: ${assay}, result: ${result}, time_range: ${time_range}, gender: ${gender}, age: ${age}`
+    };
+
+    // Convertir el objeto a una cadena JSON
+    const prompt = JSON.stringify(requestBody);
+
+    const response = await fetch("https://openiaapi2.onrender.com/ask", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: prompt, // Enviar la cadena JSON como cuerpo de la solicitud
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error al realizar la solicitud al modelo ML:", error);
+    throw error; // Propagar el error para manejarlo externamente si es necesario
+  }
+};
+
+
+
+
 
 export const getPassword = (email: string) =>
   apiFetch(`user/forgot/password`, { method: "POST", body: email });
@@ -72,12 +136,17 @@ export const getHeadquartersAllApi = () => apiFetch(`headquarter/all`);
 export const getTypeAgreementsAllApi = () => apiFetch(`typeAgreement/all`);
 export const getExaminationsAllApi = () => apiFetch(`examination/all`);
 export const getProfessionsAllApi = () => apiFetch(`profession/all`);
+export const getNationAllApi = () => apiFetch(`nation/all`);
+export const getAmbAllApi = () => apiFetch(`amb/all`);
+export const getMonitorAllApi = () => apiFetch(`monitor/`);
+export const getUserApi = () => apiFetch(`user`);
 export const getEmployeesAllApi = (criteria: any, query: any) =>
   apiFetch(`employee/all?${criteria}=${query}`);
 
 export const getEmployeeById = (criteria: any, query: any) =>
   apiFetch(`employee/id?${criteria}=${query}`);
-
+export const getEmployeeByUserId = (userId: any) =>
+  apiFetch(`employee/user/${userId}`);
 // Get for search query
 //agreement
 export const getFilterAgreeApi = (query: any, service = "") =>
@@ -182,6 +251,44 @@ export const editMethodApi = (data: any, id: any) =>
 export const deleteMethodApi = (id: any) =>
   apiFetch(`method/${id}`, { method: "DELETE" });
 
+
+export const saveNationApi = (data: any) =>
+  apiFetch(`nation/`, { method: "POST", body: data });
+export const getNationApi = (id: any) => apiFetch(`nation/${id}`);
+export const editNationApi = (data: any, id: any) =>
+  apiFetch(`nation/${id}`, { method: "PUT", body: data });
+export const deleteNationApi = (id: any) =>
+  apiFetch(`nation/${id}`, { method: "DELETE" });
+
+
+export const saveAmbApi = (data: any) =>
+  apiFetch(`amb/`, { method: "POST", body: data });
+export const getAmbApi = (id: any) => apiFetch(`amb/${id}`);
+export const editAmbApi = (data: any, id: any) =>
+  apiFetch(`amb/${id}`, { method: "PUT", body: data });
+export const deleteAmbApi = (id: any) =>
+  apiFetch(`amb/${id}`, { method: "DELETE" });
+
+
+export const saveBrandApi = (data: any) =>
+  apiFetch(`brand/`, { method: "POST", body: data });
+export const deleteBrandApi = (id: any) =>
+  apiFetch(`brand/${id}`, { method: "DELETE" });
+export const getBrandAllApi = (start: any, end: any, status: any) =>
+  apiFetch(`brand?range=[${start},${end}]&status=${status}`);
+export const getBrandApi = (id: any) => apiFetch(`brand/${id}`);
+
+
+export const getModelApi = (id: any) => apiFetch(`model/brand/${id}`);
+export const getModelsApi = (id: any) => apiFetch(`model/${id}`);
+export const saveModelApi = (data: any) =>
+  apiFetch(`model/`, { method: "POST", body: data });
+export const deleteModelApi = (id: any) =>
+  apiFetch(`model/${id}`, { method: "DELETE" });
+export const savePathApi = (data: any) =>
+  apiFetch(`path/`, { method: "POST", body: data });
+
+
 export const getUnitsApi = (start: any, end: any) =>
   apiFetch(`unit?range=[${start},${end}]`);
 export const getUnitApi = (id: any) => apiFetch(`unit/${id}`);
@@ -197,12 +304,57 @@ export const deleteUnitApi = (id: any) =>
     method: "DELETE",
   });
 
+export const saveMatchDataApi = (data: any) =>
+  apiFetch(`match/`, { method: "POST", body: data });
+
+export const saveMatchDataDetailApi = (data: any) =>
+  apiFetch(`matchdetail/`, { method: "POST", body: data });
+
+export const deleteMatchDataApi = (id: any) =>
+  apiFetch(`match/${id}`, {
+    method: "DELETE",
+  });
+
+export const deleteMatchDataDetailApi = (id: any) =>
+  apiFetch(`matchdetail/${id}`, {
+    method: "DELETE",
+  });
+
+export const editDetailApi2 = async (priorityid: any, idvalueexam: any) => {
+  const response = await fetch(API_URL_BACKEND + `matchdetail/${idvalueexam}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ priorityid, idvalueexam }),
+  });
+  const data = await response.json();
+};
+
+export const saveValuesApi = (data: any): Promise<any> =>
+  new Promise((resolve, reject) => {
+    apiFetch("process/", { method: "POST", body: data })
+      .then((response: any) => {
+        // Aquí puedes realizar cualquier procesamiento adicional con la respuesta si es necesario
+        resolve(response);
+      })
+      .catch((error: any) => {
+        // Maneja cualquier error que ocurra durante la llamada a la API
+        reject(error);
+      });
+  });
+
+export const getMatchEditValueExamApi = (id: any) => apiFetch(`matchdetail/value/exam/${id}`);
+export const getMatchEditValueExamApi2 = (id: any) => apiFetch(`matchdetail/value/exam2/${id}`);
+
 export const getPatientApi = (id: any) => apiFetch(`client/${id}`);
 export const getPagedPatientsApi = (start: any, end: any) =>
   apiFetch(`client?range=[${start},${end}]`);
 export const getPatienByDOCApi = (criteria: any, doc: any) =>
   apiFetch(`client/doc/search?${criteria}=${doc}`);
 
+export const getMatchAllApi = () => apiFetch(`match/`);
+export const getMatchApi = (id: any) => apiFetch(`match/${id}`);
 
 export const getPatientByNameApi = (criteria: any, name: any, criteria2: any, lastNameP: any) =>
   apiFetch(`client/name/search?${criteria}=${name}&${criteria2}=${lastNameP}`);
@@ -225,6 +377,7 @@ export const getAppointmentsResultsApi = (appointmentId: any) =>
 export const getExamValueResult = (appointmentDetailId: any) =>
   apiFetch(`appointment/examvalueresult/${appointmentDetailId}`);
 export const getAppointmentApi = (id: any) => apiFetch(`appointment/${id}`);
+export const getAppointmentPatientApi = (id: any) => apiFetch(`appointment/pacient/${id}`);
 export const saveAppointmentApi = (data: any) =>
   apiFetch(`appointment/`, { method: "POST", body: data });
 export const attendAppointmentApi = (data: any, id: any) =>
@@ -290,6 +443,8 @@ export const saveProfessionApi = (data: any) =>
 
 export const getMenuUserApi = (userId: any) => apiFetch(`user/menu/${userId}`);
 
+export const getHeadquartersAgreementApi = (headquartersId: any) =>
+  apiFetch(`agreement?headquarterId=${headquartersId}`);
 export const editHeadquarterApi = (id: any, data: any) =>
   apiFetch(`headquarter/${id}`, { method: "PUT", body: data, headers: { 'Content-Type': 'application/json' } });
 export const saveHeadquarterApi = (data: any) =>

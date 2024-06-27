@@ -6,11 +6,12 @@ import KeyboardBackspaceRoundedIcon from '@mui/icons-material/KeyboardBackspaceR
 import TabContext from '@material-ui/lab/TabContext';
 import TabList from '@material-ui/lab/TabList';
 import TabPanel from '@material-ui/lab/TabPanel';
-import { editEmployeeApi, getDistrictsForProvince, getEmployeeApi, getHeadquartersAllApi, getProfessionsAllApi, getProvincesForRegion, getRegionsApi, getRolesApi, getSpecialitiesApi, getTuitionsApi, getTypeDocsApi, getTypeEmployeesApi, saveEmployeeApi, saveProfessionApi, saveSpecialityApi, saveTuitionApi, saveTypeEmployeeApi } from "../../../api";
+import { Tabs } from '@mui/material';
+import { editEmployeeApi, getDistrictsForProvince, getEmployeeApi, getHeadquartersAllApi, getPagedTypeDocsApi, getProfessionsAllApi, getProvincesForRegion, getRegionsApi, getRolesApi, getSpecialitiesApi, getTuitionsApi, getTypeDocsApi, getTypeEmployeesApi, saveEmployeeApi, saveProfessionApi, saveSpecialityApi, saveTuitionApi, saveTypeEmployeeApi } from "../../../api";
 import { civilStatus, genders, typeDirections } from "../../../constant";
 import { Link, useParams } from "react-router-dom";
 import { toBase64 } from "../../../util";
-
+import Swal from 'sweetalert2';
 
 export default function TbModificarPersonal() {
 
@@ -25,6 +26,7 @@ export default function TbModificarPersonal() {
     const [nombres, setNombres] = React.useState<any>('');
     const [apePa, setApePa] = React.useState<any>('');
     const [apeMa, setApeMa] = React.useState<any>('');
+    const [displayName, setDisplayName] = React.useState<any>('');
     const [telMovil, setTelMovil] = React.useState<any>('');
     const [telFijo, setTelFijo] = React.useState<any>('');
     const [genero, setGenero] = React.useState<any>('');
@@ -41,6 +43,7 @@ export default function TbModificarPersonal() {
     const [direccion, setDireccion] = React.useState<any>('');
     const [referencia, setReferencia] = React.useState<any>('');
     const [direcLugar, setDirecLugar] = React.useState<any>('');
+    const [userId, setUserId] = React.useState<any>('');
     const [abrirProvincia, setAbrirProvincia] = React.useState<any>(true);
     const [abrirDistrito, setAbrirDistrito] = React.useState<any>(true);
 
@@ -193,7 +196,7 @@ export default function TbModificarPersonal() {
         setFirmaFile(event.target.files[0]);
     };
     //#endregion
-
+ 
     //#region Cuarta Vista(Usuario)
     const handleChangeCorreo = (event: React.ChangeEvent<HTMLInputElement>) => {
         setCorreo(event.target.value);
@@ -279,7 +282,7 @@ export default function TbModificarPersonal() {
 
     React.useEffect(() => {
         //#region llamadas al servicio
-        getTypeDocsApi().then((ag: any) => {
+        getPagedTypeDocsApi ().then((ag: any) => {
             setTipoDocList(ag.data)
         });
         getRegionsApi().then((ag: any) => {
@@ -310,6 +313,7 @@ export default function TbModificarPersonal() {
             setNombres(ag.data.person.name)
             setApePa(ag.data.person.lastNameP)
             setApeMa(ag.data.person.lastNameM)
+            setDisplayName(ag.data.person.name+ " " +ag.data.person.lastNameP)
             setTelMovil(ag.data.person.phoneNumber)
             setTelFijo(ag.data.person.tlfNumber)
             setGenero(ag.data.person.gender)
@@ -331,6 +335,7 @@ export default function TbModificarPersonal() {
             setDireccion(ag.data.person.typeDirection)
             setReferencia(ag.data.person.referencePoint)
             setDirecLugar(ag.data.person.address)
+            setUserId(ag.data.person.UserId)
 
             setEspecialidad(ag.data.speciality.id)
             setCargo(ag.data.typeEmployee.id)
@@ -340,7 +345,7 @@ export default function TbModificarPersonal() {
             setColegiaturaUno(ag.data.tuition.tuitionNumber)
             setColegiaturaDos(ag.data.tuition2.tuitionNumber)
             setValidarFirma(ag.data.person.digitalSignatureUrl);
-
+            
             setCorreo(ag.data.user.username)
             setRol(ag.data.roles[0].id)
             setSede(ag.data.headquarter.id)
@@ -349,102 +354,264 @@ export default function TbModificarPersonal() {
         //#endregion
     }, []);
 
+    const personalActualizado=()=>{
+        Swal.fire({
+            title: 'Personal actualizado correctamente',
+            icon: 'success',
+          })
+    }
+
+    const personalAgregadoError=()=>{
+        Swal.fire({
+            title: 'No se agrego el personal',
+            icon: 'warning',
+          })
+    }
+    const errtipoDoc=()=>{
+        Swal.fire({
+            title: 'Datos personales-Seleccione tipo de documento\n',
+            icon: 'warning',
+          })
+    }
+
+    const errNumDoc=()=>{
+        Swal.fire({
+            title: 'Datos personales-Ingrese numero de doc\n',
+            icon: 'warning',
+          })
+    }
+
+    const errNombres=()=>{
+        Swal.fire({
+            title: 'Datos personales-Ingrese nombre\n',
+            icon: 'warning',
+          })
+    }
+
+    const errApePa=()=>{
+        Swal.fire({
+            title: 'Datos personales-Ingrese apellido paterno\n',
+            icon: 'warning',
+          })
+    }
+
+    const errApeMa=()=>{
+        Swal.fire({
+            title: 'Datos personales-Ingrese apellido materno\n',
+            icon: 'warning',
+          })
+    }
+
+    const errtelMovil=()=>{
+        Swal.fire({
+            title: 'Datos personales-Ingrese telefono movil\n',
+            icon: 'warning',
+          })
+    }
+
+    const errgenero=()=>{
+        Swal.fire({
+            title: 'Datos personales-Ingrese genero\n',
+            icon: 'warning',
+          })
+    }
+
+    const errestadoCivil=()=>{
+        Swal.fire({
+            title: 'Datos personales-Ingrese estado civil\n',
+            icon: 'warning',
+          })
+    }
+
+    const errfeNacimiento=()=>{
+        Swal.fire({
+            title: 'Datos personales-Ingrese Fecha Nacimiento\n',
+            icon: 'warning',
+          })
+    }
+
+    const errfeAdmision=()=>{
+        Swal.fire({
+            title: 'Datos personales-Ingrese Fecha admision\n',
+            icon: 'warning',
+          })
+    }
+
+    const errRegion=()=>{
+        Swal.fire({
+            title: 'Domicilio-Seleccione un departamento \n',
+            icon: 'warning',
+          })
+    }
+
+    const errProvincia=()=>{
+        Swal.fire({
+            title: 'Domicilio-Seleccione una provincia \n',
+            icon: 'warning',
+          })
+    }
+
+    const errDistrito=()=>{
+        Swal.fire({
+            title: 'Domicilio-Seleccione un distrito \n',
+            icon: 'warning',
+          })
+    }
+
+    const errDireccion=()=>{
+        Swal.fire({
+            title: 'Domicilio-Seleccione un tipo de direccion \n',
+            icon: 'warning',
+          })
+    }
+
+    const errDirecLugar=()=>{
+        Swal.fire({
+            title: 'Domicilio-Ingrese una direccion \n',
+            icon: 'warning',
+          })
+    }
+
+    const errEspecialidad=()=>{
+        Swal.fire({
+            title: 'Profesion-Seleccione una especialidad \n',
+            icon: 'warning',
+          })
+    }
+
+    const errCargo=()=>{
+        Swal.fire({
+            title: 'Profesion-Seleccione un cargo \n',
+            icon: 'warning',
+          })
+    }
+
+    const errProfesion=()=>{
+        Swal.fire({
+            title: 'Profesion-Seleccione una profesion \n',
+            icon: 'warning',
+          })
+    }
+
+    const errColegiatura1=()=>{
+        Swal.fire({
+            title: 'Profesion-Seleccione una colegiatura \n',
+            icon: 'warning',
+          })
+    }
+
+    const errColegiatura2=()=>{
+        Swal.fire({
+            title: 'Profesion-Seleccione una colegiatura2 \n',
+            icon: 'warning',
+          })
+    }
+
+    const errcorreo=()=>{
+        Swal.fire({
+            title: 'Profesion-Ingrese correo \n',
+            icon: 'warning',
+          })
+    }
+
+    const errrol=()=>{
+        Swal.fire({
+            title: 'Profesion-Seleccione un rol \n',
+            icon: 'warning',
+          })
+    }
+
+     const errsede=()=>{
+        Swal.fire({
+            title: 'Profesion-Seleccione una sede \n',
+            icon: 'warning',
+          })
+    }
+
 
     const crearEmpleado = async () => {
-        let mError = "LLenar Campos: \n";
         let error = false;
         //#region validaciones
-        if (tipoDoc == "") {
-            mError += "Datos personales-Seleccione tipo de documento\n";
-            error = true;
-        }
-        if (numDoc == "") {
-            mError += "Datos personales-Ingrese numero de doc\n";
-            error = true;
-        }
-        if (nombres == "") {
-            mError += "Datos personales-Ingrese nombre\n";
-            error = true;
-        }
-        if (apePa == "") {
-            mError += "Datos personales-Ingrese apellido paterno\n";
-            error = true;
-        }
-        if (apeMa == "") {
-            mError += "Datos personales-Ingrese apellido materno\n";
-            error = true;
-        }
-        if (telMovil == "") {
-            mError += "Datos personales-Ingrese telefono movil\n";
-            error = true;
-        }
-        if (genero == "") {
-            mError += "Datos personales-Ingrese genero\n";
-            error = true;
-        }
-        if (estadoCivil == "") {
-            mError += "Datos personales-Ingrese estado civil\n";
-            error = true;
-        }
-        if (feNacimiento == "") {
-            mError += "Datos personales-Ingrese Fecha Nacimiento\n";
-            error = true;
-        }
-        if (feAdmision == "") {
-            mError += "Datos personales-Ingrese Fecha admision\n";
-            error = true;
-        }
-        if (region == "") {
-            mError += "Domicilio-Seleccione un departamento \n";
-            error = true;
-        }
-        if (provincia == "") {
-            mError += "Domicilio-Seleccione una provincia \n";
-            error = true;
-        }
-        if (distrito == "") {
-            mError += "Domicilio-Seleccione un distrito \n";
-            error = true;
-        }
-        if (direccion == "") {
-            mError += "Domicilio-Seleccione un tipo de direccion \n";
-            error = true;
-        }
-        if (direcLugar == "") {
-            mError += "Domicilio-Ingrese una direccion \n";
-            error = true;
-        }
-        if (especialidad == "") {
-            mError += "Profesion-Seleccione una especialidad \n";
-            error = true;
-        }
-        if (cargo == "") {
-            mError += "Profesion-Seleccione un cargo \n";
-            error = true;
-        }
-        if (profesion == "") {
-            mError += "Profesion-Seleccione una profesion \n";
-            error = true;
-        }
-        if (colegiatura1 == "") {
-            mError += "Profesion-Seleccione una colegiatura \n";
-            error = true;
-        }
-        if (correo == "") {
-            mError += "Profesion-Ingrese correo \n";
+        if (sede == "") {
+            errsede()
             error = true;
         }
         if (rol == "") {
-            mError += "Profesion-Seleccione un rol \n";
+            errrol()
             error = true;
         }
-        if (sede == "") {
-            mError += "Profesion-Seleccione una sede \n";
+        if (profesion == "") {
+            errProfesion()
+            error = true;
+        }
+        if (cargo == "") {
+            errCargo()
+            error = true;
+        }
+        if (especialidad == "") {
+            errEspecialidad()
+            error = true;
+        }
+        if (direcLugar == "") {
+            errDirecLugar()
+            error = true;
+        }
+        if (direccion == "") {
+            errDireccion()
+            error = true;
+        }
+        if (distrito == "") {
+            errDistrito()
+            error = true;
+        }
+        if (provincia == "") {
+            errProvincia()
+            error = true;
+        }
+        if (region == "") {
+            errRegion()
+            error = true;
+        }
+        if (feAdmision == "") {
+            errfeAdmision()
+            error = true;
+        }
+         if (feNacimiento == "") {
+            errfeNacimiento()
+            error = true;
+        }
+        if (estadoCivil == "") {
+            errestadoCivil()
+            error = true;
+        }
+        if (genero == "") {
+            errgenero()
+            error = true;
+        }
+       
+        if (apeMa == "") {
+            errApeMa()
+            error = true;
+        }
+        if (apePa == "") {
+            errApePa()
+            error = true;
+        }
+        if (nombres == "") {
+            errNombres()
+             error = true;
+         }
+        if (numDoc == "") {
+            errNumDoc()
+            error = true;
+        }
+        if (tipoDoc == "") {
+            errtipoDoc()
             error = true;
         }
 
         if (error) {
-            alert(mError);
+            
             return;
         }
         //#endregion 
@@ -456,28 +623,29 @@ export default function TbModificarPersonal() {
             ProvinceId: provinciaList.filter((x: any) => x.id == provincia),
             RegionId: regionList.filter((x: any) => x.id == region),
             SpecialityId: especialidad,
-            Tuition2Id: colegiatura2,
-            TuitionId: colegiatura1,
+            Tuition2Id: parseInt(colegiatura2),
+            TuitionId: parseInt(colegiatura1),
             TypeDocId: tipoDoc,
             TypeEmployeeId: cargo,
-            address: direccion,
+            address: direcLugar,
             admissionDate: feAdmision,
             birthDate: feNacimiento,
             civilStatus: estadoCivil,
             dni: numDoc,
             gender: genero,
-            lastNameM: apeMa,
-            lastNameP: apePa,
-            name: nombres,
-            phoneNumber: telMovil,
+            lastNameM: apeMa.toUpperCase(),
+            lastNameP: apePa.toUpperCase(),
+            name: nombres.toUpperCase(),
+            phoneNumber: telMovil ? telMovil: null,
             referencePoint: referencia,
             roles: rol,
-            tlfNumber: telFijo,
-            tuitionNumber: colegiatura1,
-            tuitionNumber2: colegiatura2,
+            tlfNumber: telFijo ? telFijo: null,
+            tuitionNumber: colegiaturaUno,
+            tuitionNumber2: colegiaturaDos,
             typeDirection: direccion,
+            iduser: userId,
             username: correo,
-            digitalSignatureUrl: firma.split("\\")[firma.split("\\").length - 1]
+            digitalSignatureUrl: validarFirma,
         }
 
         if (firma != "") {
@@ -491,39 +659,73 @@ export default function TbModificarPersonal() {
             }
             editEmployeeApi(daton, userid).then((x: any) => {
                 if (x.status) {
-                    alert(x.message.text);
+                    //alert(x.message.text);
+                    personalActualizado()
                     window.location.href = '/apps/employees'
                 } else {
-                    alert(x.message.text);
+                    personalAgregadoError()
                 }
             });
+            
             return;
         }
 
         editEmployeeApi(data, userid).then((x: any) => {
             if (x.status) {
-                alert(x.message.text);
+                personalActualizado()
                 window.location.href = '/apps/employees'
             } else {
                 alert(x.message.text);
             }
         });
     }
+
+
+    const errorEspecialidad=()=>{
+        Swal.fire({
+            title: 'Ingrese el nombre de la especialidad',
+            icon: 'warning',
+            target: '#custom-target4',
+          })
+    }
+
+    const errorDescripcionEspecialidad=()=>{
+        Swal.fire({
+            title: 'Ingrese la descripcion de la especialidad',
+            icon: 'warning',
+            target: '#custom-target4',
+          })
+    }
+
+    const especialidadGuardada=()=>{
+        Swal.fire({
+            title: 'Especialidad agregada con exito',
+            icon: 'success',
+          })
+    }
+
+    const especialidadGuardadaerror=()=>{
+        Swal.fire({
+            title: 'La especialidad no se guardo',
+            icon: 'warning',
+          })
+    }
+
+
+
     const crearEspecialidad = () => {
         if (nombreEspecialidad == "") {
-            alert("Ingrese nombre");
+            //alert("Ingrese nombre");
+            errorEspecialidad()
             return;
         }
-        if (descripcionEspecialidad == "") {
-            alert("Ingrese descripcion");
-            return;
-        }
+       
         saveSpecialityApi({
             description: descripcionEspecialidad,
             name: nombreEspecialidad
         }).then((x: any) => {
             if (x.status) {
-                alert(x.message.text);
+                especialidadGuardada()
                 handleCloseEspecialidad();
                 setNombreEspecialidad("");
                 setDescripcionEspecialidad("");
@@ -531,26 +733,56 @@ export default function TbModificarPersonal() {
                     setEspecialidadList(ag.data);
                 });
             } else {
-                alert(x.text);
+                especialidadGuardadaerror()
                 return;
             }
         })
     }
+
+
+    const errorNombreCargo=()=>{
+        Swal.fire({
+            title: 'Ingrese el nombre del cargo',
+            icon: 'warning',
+            target: '#custom-target',
+          })
+    }
+
+    const errorDescripcionCargo=()=>{
+        Swal.fire({
+            title: 'Ingrese la descripcion del cargo',
+            target: '#custom-target',
+            icon: 'warning',
+          })
+    }
+
+    const guardarCargo=()=>{
+        Swal.fire({
+            title: 'Cargo guardado con exito',
+            icon: 'success',
+          })
+    }
+
+    const guardarCargoError=()=>{
+        Swal.fire({
+            title: 'El cargo no fue guardado',
+            icon: 'warning',
+          })
+    }
+
     const crearCargo = () => {
         if (nombreCargo == "") {
-            alert("Ingrese nombre");
+            //alert("Ingrese nombre");
+            errorNombreCargo()
             return;
         }
-        if (descripcionCargo == "") {
-            alert("Ingrese descripcion");
-            return;
-        }
+        
         saveTypeEmployeeApi({
             description: descripcionCargo,
             name: nombreCargo
         }).then((x: any) => {
             if (x.status) {
-                alert(x.message.text);
+                guardarCargo()
                 handleCloseCargo();
                 setNombreCargo("");
                 setDescripcionCargo("");
@@ -558,26 +790,58 @@ export default function TbModificarPersonal() {
                     setCargoList(ag.data);
                 });
             } else {
-                alert(x.text);
+                guardarCargoError()
                 return;
             }
         })
     }
+
+
+
+    const errorProfesion=()=>{
+        Swal.fire({
+            title: 'Ingrese el nombre de la profesion',
+            icon: 'warning',
+            target: '#custom-target2',
+          })
+    }
+
+    const errorDescripcionProfesion=()=>{
+        Swal.fire({
+            title: 'Ingrese la descripcion de la profesion',
+            icon: 'warning',
+            target: '#custom-target2',
+          })
+    }
+
+    const guardarProfesion=()=>{
+        Swal.fire({
+            title: 'Profesion guardada con exito',
+            icon: 'success',
+          })
+    }
+
+    const guardarProfesionError=()=>{
+        Swal.fire({
+            title: 'La profesion no se guardo',
+            icon: 'warning',
+          })
+    }
+
+
     const crearProfesion = () => {
         if (nombreProfesion == "") {
-            alert("Ingrese nombre");
+            //alert("Ingrese nombre");
+            errorProfesion()
             return;
         }
-        if (descripcionProfesion == "") {
-            alert("Ingrese descripcion");
-            return;
-        }
+        
         saveProfessionApi({
             description: descripcionProfesion,
             name: nombreProfesion
         }).then((x: any) => {
             if (x.status) {
-                alert(x.message.text);
+                guardarProfesion()
                 handleCloseProfesion();
                 setNombreProfesion("");
                 setDescripcionProfesion("");
@@ -585,34 +849,72 @@ export default function TbModificarPersonal() {
                     setProfesionList(ag.data);
                 });
             } else {
-                alert(x.text);
+                guardarProfesionError()
                 return;
             }
         })
     }
+
+    const rolListFilt = rolList.filter(
+        (n: any) => ( n.value< 3)
+    ) 
+    
+    const tipoDocListFilt = tipoDocList.filter(
+        (n: any) => ( n.description2== "Empleado")
+    ) 
+
+    const errorNombreColegiatura=()=>{
+        Swal.fire({
+            title: 'Ingrese el nombre de la colegiatura',
+            icon: 'warning',
+            target: '#custom-target3',
+          })
+    }
+
+    const errorDescripcionColegiatura=()=>{
+        Swal.fire({
+            title: 'Ingrese la descripcion de la colegiatura',
+            icon: 'warning',
+            target: '#custom-target3',
+          })
+    }
+
+    const guardarColegiatura=()=>{
+        Swal.fire({
+            title: 'Colegiatura guardada exitosamente',
+            icon: 'success',
+          })
+    }
+
+    const guardarColegiaturaError=()=>{
+        Swal.fire({
+            title: 'La colegiatura no fue guardada',
+            icon: 'warning',
+          })
+    }
+
     const crearColegiatura = () => {
         if (nombreColegiatura == "") {
-            alert("Ingrese nombre");
+            //alert("Ingrese nombre");
+            errorNombreColegiatura()
             return;
         }
-        if (descripcionColegiatura == "") {
-            alert("Ingrese descripcion");
-            return;
-        }
+        
         saveTuitionApi({
             description: descripcionColegiatura,
             name: nombreColegiatura
         }).then((x: any) => {
             if (x.status) {
-                alert(x.message.text);
+                guardarColegiatura()
                 handleCloseColegiatura();
                 setNombreColegiatura("");
                 setDescripcionColegiatura("");
                 getTuitionsApi().then((ag: any) => {
                     setColegiatura1List(ag.data);
+                    setColegiatura2List(ag.data);
                 });
             } else {
-                alert(x.text);
+                guardarColegiaturaError()
                 return;
             }
         })
@@ -650,7 +952,7 @@ export default function TbModificarPersonal() {
                             <InputLabel style={{ color: "white", fontFamily: "Quicksand", fontWeight: "400", fontSize: "2.2rem" }} >{nombres+" "+apePa+" "+apeMa}</InputLabel >
                         </Grid>
                         <Grid item md={4}>
-                            <Button onClick={crearEmpleado} variant="contained" style={{ width: '20.5ch', height: '4.4ch', backgroundColor: "rgb(0 85 169)", color: "white", fontFamily: "Quicksand", fontWeight: "900", fontSize: "1.15rem" }}>Guardar</Button>
+                            <Button type= "submit" onClick={crearEmpleado} variant="contained" style={{ width: '20.5ch', height: '4.4ch', backgroundColor: "rgb(0 85 169)", color: "white", fontFamily: "Quicksand", fontWeight: "900", fontSize: "1.15rem" }}>Guardar</Button>
                         </Grid>
                     </Grid>
                     <Grid container item style={{ alignItems: "center" }} mt={0.3}>
@@ -661,16 +963,18 @@ export default function TbModificarPersonal() {
                 </Grid>
                 <br></br>
                 <div>
+                    <br></br>
+                    <br></br>
                     <CardContent style={{ backgroundColor: "white", borderRadius: "12px" }}>
                         <div>
                             <TabContext value={values}>
                                 <Box >
-                                    <TabList scrollButtons="auto" variant="scrollable" indicatorColor="primary" textColor="primary" onChange={handleChange} >
+                                    <Tabs value={values} scrollButtons="auto" variant="scrollable" indicatorColor="primary" textColor="primary" onChange={handleChange} >
                                         <Tab className="h-64 normal-case" label="Datos personales" value="1" />
                                         <Tab className="h-64 normal-case" label="Domicilio" value="2" />
                                         <Tab className="h-64 normal-case" label="Profesión" value="3" />
                                         <Tab className="h-64 normal-case" label="Usuario" value="4" />
-                                    </TabList>
+                                    </Tabs>
                                 </Box>
                                 <TabPanel value="1">
                                     <Box sx={{ flexGrow: 1 }}>
@@ -680,9 +984,9 @@ export default function TbModificarPersonal() {
                                                     select fullWidth value={tipoDoc} onChange={handleChangeTypeDoc}
                                                     helperText="Por favor seleccione uno"
                                                 >
-                                                    {tipoDocList.map((row: any, index: any) => {
+                                                    {tipoDocListFilt.map((row: any, index: any) => {
                                                         return (
-                                                            <MenuItem key={index} value={row.value}>{row.name}</MenuItem>
+                                                            <MenuItem key={index} value={row.id}>{row.name}</MenuItem>
                                                         )
                                                     })}
 
@@ -919,7 +1223,7 @@ export default function TbModificarPersonal() {
                                                     select fullWidth value={rol} onChange={handleChangeRol}
                                                     helperText="Por favor seleccione uno"
                                                 >
-                                                    {rolList.map((row: any, index: any) => {
+                                                    {rolListFilt.map((row: any, index: any) => {
                                                         return (
                                                             <MenuItem key={index} value={row.value}>{row.name}</MenuItem>
                                                         )
@@ -946,7 +1250,7 @@ export default function TbModificarPersonal() {
                     </CardContent>
                 </div >
                 <div>
-                    <Modal
+                    <Modal id="custom-target4"
                         keepMounted
                         open={abrirEspecialidad}
                         onClose={handleCloseEspecialidad}
@@ -977,7 +1281,7 @@ export default function TbModificarPersonal() {
                     </Modal>
                 </div>
                 <div>
-                    <Modal
+                    <Modal id="custom-target"
                         keepMounted
                         open={abrirCargo}
                         onClose={handleCloseCargo}
@@ -1008,7 +1312,7 @@ export default function TbModificarPersonal() {
                     </Modal>
                 </div>
                 <div>
-                    <Modal
+                    <Modal id="custom-target2"
                         keepMounted
                         open={abrirProfesion}
                         onClose={handleCloseProfesion}
@@ -1039,7 +1343,7 @@ export default function TbModificarPersonal() {
                     </Modal>
                 </div>
                 <div>
-                    <Modal
+                    <Modal id="custom-target3"
                         keepMounted
                         open={abrirColegiatura}
                         onClose={handleCloseColegiatura}
@@ -1075,5 +1379,3 @@ export default function TbModificarPersonal() {
     )
 
 }
-
-

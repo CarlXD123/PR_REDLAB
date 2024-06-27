@@ -6,12 +6,14 @@ import KeyboardBackspaceRoundedIcon from '@mui/icons-material/KeyboardBackspaceR
 import TabContext from '@material-ui/lab/TabContext';
 import TabList from '@material-ui/lab/TabList';
 import TabPanel from '@material-ui/lab/TabPanel';
+import { Tabs } from '@mui/material';
 import { addRefererApi, addDoctorApi, editAppointmentApi, getAgreementsAllApi, getAgreementsListPriceApi, getAppointmentApi, getAppointmentsResultsApi, getDistrictsForProvince, getDoctorApi, getExaminationsAllApi, getExamValuesApi, getFilterExamApi, getHeadquartersAllApi, getPatienByDOCApi, getProvincesForRegion, getRefererApi, getRegionsApi, getServicesAllApi, getTypeDocsApi } from "../../../api";
 import { Link, useParams } from "react-router-dom";
 import SearchSharpIcon from '@mui/icons-material/SearchSharp';
 import TableSortLabel from '@mui/material/TableSortLabel';
 import { visuallyHidden } from '@mui/utils';
 import moment from "moment";
+import Swal from 'sweetalert2';
 
 export default function TbEditarCita() {
 
@@ -214,8 +216,6 @@ export default function TbEditarCita() {
                 setListaPrecioData(ag.data.find((p: any) => p.id == x.data.priceList.id));
                 getExamValuesApi(id).then((y: any) => {
                     for (let a = 0; a < y.data.length; a++) {
-                        console.log(y.data[a].ExaminationId)
-                        //console.log(y.data.services[a].examinations[0].code)
                         setAgregarExamen(ag.data.find((p: any) => p.id == x.data.priceList.id), y.data[a].ExaminationId, x.data.discount)
                     }
                 });
@@ -409,14 +409,29 @@ export default function TbEditarCita() {
     const handleCloseAsignarExamenes = () => {
         setAsignarExamenes(false);
     }
+
+    const OpenExamenListaPrecio = () => {
+        Swal.fire({
+            title: 'Eliga una lista de precio',
+            icon: 'warning',
+        })
+    }
+
+    const errDNIPaciente = () => {
+        Swal.fire({
+            title: 'Ingrese el dni del paciente',
+            icon: 'warning',
+        })
+    }
+
     const handleOpenAgregarExamen = () => {
         if (nombres == "") {
-            alert("Ingrese el dni del paciente")
+            errDNIPaciente()
             setAsignarExamenes(false);
             return;
         }
         if (bloquearAgregarExamenes) {
-            alert("Eliga una lista de precio")
+            OpenExamenListaPrecio()
             setAsignarExamenes(false);
             return;
         }
@@ -544,6 +559,13 @@ export default function TbEditarCita() {
             disableOrder: false
         },
         {
+            id: 'method',
+            numeric: false,
+            disablePadding: false,
+            label: 'Metodologia',
+            disableOrder: false
+        },
+        {
             id: 'service',
             numeric: false,
             disablePadding: false,
@@ -625,6 +647,14 @@ export default function TbEditarCita() {
         page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
     //#endregion 
 
+
+    const errSelectMinimCamp = () => {
+        Swal.fire({
+            title: 'Seleccione un minimo campo',
+            icon: 'warning',
+        })
+    }
+
     const buscarExamenes = (datoExamen: any, datoServicio: any) => {
         if (datoExamen != "" && datoServicio == "") {
             getFilterExamApi(datoExamen, "").then(ag => {
@@ -639,7 +669,7 @@ export default function TbEditarCita() {
                 setRowsAsignar(ag.data)
             })
         } else {
-            alert("Seleccione minimo un campo")
+            errSelectMinimCamp()
         }
     }
     const buscarExamenEnter = (event: any, datoExamen: any, datoServicio: any) => {
@@ -670,6 +700,39 @@ export default function TbEditarCita() {
             }
         }
     }
+
+    const examNoPrice = () => {
+        Swal.fire({
+            title: 'El examen que eligio no cuenta con un precio',
+            icon: 'warning',
+            target: '#custom-target',
+        })
+    }
+
+    const examYaAgregado = () => {
+        Swal.fire({
+            title: 'El examen que eligio, ya esta agregado',
+            icon: 'warning',
+            target: '#custom-target',
+        })
+    }
+
+    const examNoAgregado = () => {
+        Swal.fire({
+            title: 'Examen no registrado',
+            icon: 'warning',
+            target: '#custom-target',
+        })
+    }
+
+    const ExamenAdd = () => {
+        Swal.fire({
+            title: 'Examen Agregado',
+            icon: 'success',
+            target: '#custom-target',
+        })
+    }
+
     const agregarExamen = (id: any, code: any) => {
         const examen = listaPrecioData.examinations.find((x: any) => x.id == id);
         if (examen != undefined) {
@@ -685,18 +748,19 @@ export default function TbEditarCita() {
                     });
                     setRows(fila);
                     ///////
+                    ExamenAdd()
                     calcularPrecio(fila)
                     //////
                     let aux = rowsAsignar;
                     setRowsAsignar(aux.filter((x: any) => x.id != examen.id))
                 } else {
-                    alert("El examen que eligio no cuenta con un precio")
+                    examNoPrice()
                 }
             } else {
-                alert("El examen que eligio, ya esta agregado")
+                examYaAgregado()
             }
         } else {
-            alert("Examen no registrado")
+            examNoAgregado()
         }
     }
     const setCalcularPrecio = (fila: any, descuento: any) => {
@@ -721,22 +785,117 @@ export default function TbEditarCita() {
         setPrecio(acumPrice)
         setPrecioFinal(acumPrice - descuento);
     }
+
+    const errSede = () => {
+        Swal.fire({
+            title: 'Seleccione una sede',
+            icon: 'warning',
+        })
+    }
+
+    const errDescuent = () => {
+        Swal.fire({
+            title: 'Ingrese un descuento correcto',
+            icon: 'warning',
+        })
+    }
+
+    const errDate = () => {
+        Swal.fire({
+            title: 'Fecha incorrecta',
+            icon: 'warning',
+        })
+    }
+
+    const errHour = () => {
+        Swal.fire({
+            title: 'Hora incorrecta',
+            icon: 'warning',
+        })
+    }
+
+    const editCita = () => {
+        Swal.fire({
+            title: 'Cita editada con exito',
+            icon: 'success',
+        })
+    }
+
+
+    const errEditCita = () => {
+        Swal.fire({
+            title: 'La cita no fue editada',
+            icon: 'success',
+        })
+    }
+
+    const Referen = () => {
+        Swal.fire({
+            title: 'Seleccione una referencia',
+            icon: 'warning',
+        })
+    }
+
+    const Referencode = () => {
+        Swal.fire({
+            title: 'Escriba un codigo de referencia',
+            icon: 'warning',
+        })
+    }
+
+    const ObservaReferente = () => {
+        Swal.fire({
+            title: 'Ingrese las observaciones del referente',
+            icon: 'warning',
+        })
+    }
+
+    const MedicoAgrega = () => {
+        Swal.fire({
+            title: 'Elija el medico',
+            icon: 'warning',
+        })
+    }
+
+    function eliminarDuplicados(arr: any[]) {
+        const uniqueArray = Array.from(arr.reduce((map, item) => map.set(item.label, item), new Map()).values());
+        return uniqueArray;
+    }
+
     const guardarCita = () => {
         const hoy = moment().format("YYYY-MM-DD");
         if (sede == "") {
-            alert("Seleccione una sede");
+            errSede()
+            return;
+        }
+        if (referencia == "") {
+            //alert("Hora incorrecta");
+            //setAbrirErrorHora(true);
+            Referen()
+            return;
+        }
+        if (codigoReferencia == "") {
+            //alert("Hora incorrecta");
+            //setAbrirErrorHora(true);
+            Referencode()
+            return;
+        }
+        if (medico == "") {
+            //alert("Hora incorrecta");
+            //setAbrirErrorHora(true);
+            MedicoAgrega()
             return;
         }
         if (isNaN(precioFinal) || precioFinal <= 0) {
-            alert("Ingrese un descuento correcto");
+            errDescuent()
             return;
         }
         if (fecha < hoy) {
-            alert("Fecha incorrecta");
+            errDate()
             return;
         }
         if (hora == "") {
-            alert("Hora incorrecta");
+            errHour()
             return;
         }
 
@@ -761,17 +920,41 @@ export default function TbEditarCita() {
         }
         editAppointmentApi(data, id).then(x => {
             if (x.status) {
-                alert(x.message.text)
+                editCita()
                 window.location.href = "/apps/appointments"
             } else {
-                alert(x.message.text)
+                errEditCita()
                 return;
             }
         })
     }
+
+    const errNombMedico = () => {
+        Swal.fire({
+            title: 'Ingrese nombre del medico',
+            icon: 'warning',
+            target: '#custom-target2',
+        })
+    }
+
+    const medicoNoCreate = () => {
+        Swal.fire({
+            title: 'El medico no fue agregado',
+            icon: 'warning',
+            target: '#custom-target2',
+        })
+    }
+
+    const medicoCreate = () => {
+        Swal.fire({
+            title: 'El medico fue agregado',
+            icon: 'success',
+        })
+    }
+
     const crearNuevoMedico = () => {
         if (nombreMedico == "") {
-            alert("Ingrese nombre del medico")
+            errNombMedico()
             return
         }
         let data = {
@@ -779,20 +962,44 @@ export default function TbEditarCita() {
         }
         addDoctorApi(data).then((x: any) => {
             if (x.status) {
-                alert(x.message.text)
+                medicoCreate()
                 getDoctorApi().then((ag: any) => {
                     setMedicoList(ag.data);
                 });
                 setAbrirAgregarMedico(false)
             } else {
-                alert(x.message.text)
+                medicoNoCreate()
                 return;
             }
         })
     }
+
+    const errNombReferer = () => {
+        Swal.fire({
+            title: 'Ingrese nombre del referente',
+            icon: 'warning',
+            target: '#custom-target3',
+        })
+    }
+
+    const ReferenteAgreg = () => {
+        Swal.fire({
+            title: 'Referente agregado',
+            icon: 'success',
+        })
+    }
+
+    const ReferenteNoAgreg = () => {
+        Swal.fire({
+            title: 'El referente no fue agregado',
+            icon: 'warning',
+        })
+    }
+
+
     const crearNuevoReferente = () => {
         if (nombreReferencia == "") {
-            alert("Ingrese nombre del referente")
+            errNombReferer()
             return
         }
         let data = {
@@ -800,19 +1007,19 @@ export default function TbEditarCita() {
         }
         addRefererApi(data).then((x: any) => {
             if (x.status) {
-                alert(x.message.text)
+                ReferenteAgreg()
                 getRefererApi().then((ag: any) => {
                     setReferenciaList(ag.data);
                 });
                 setAbrirAgregarReferencia(false)
             } else {
-                alert(x.message.text)
+                ReferenteNoAgreg()
                 return;
             }
         })
     }
     return (
-        <div className='tabla-componente card-table-general'>
+        <div className='tabla-componente card-table'>
             <Contenido>
                 <Grid container style={{ alignItems: "center" }}>
                     <Grid container item  >
@@ -839,303 +1046,309 @@ export default function TbEditarCita() {
                 </Grid>
                 <br></br>
                 <div>
+                    <br></br>
+                    <br></br>
                     <CardContent style={{ backgroundColor: "white", borderRadius: "12px" }}>
-                        <div>
-                            <TabContext value={values}>
-                                <Box >
-                                    <TabList scrollButtons="auto" variant="scrollable" indicatorColor="primary" textColor="primary" onChange={handleChange}>
-                                        <Tab className="h-64 normal-case" label="Datos de la Cita" value="1" />
-                                        <Tab className="h-64 normal-case" label="Examenes" value="2" />
-                                        <Tab className="h-64 normal-case" label="Fecha y Hora" value="3" />
-                                    </TabList>
-                                </Box>
-                                <TabPanel value="1">
-                                    <Box sx={{ flexGrow: 1 }}>
-                                        <Grid container spacing={2}>
-                                            <Grid container item md={4} >
-                                                <TextField id="outlined-basic" label="Tipo Documento" variant="outlined"
-                                                    select fullWidth value={tipoDoc} onChange={handleChangeTypeDoc}
-
-                                                    inputProps={
-                                                        { readOnly: true, }
-                                                    }
-                                                >
-                                                    {tipoDocList.map((row: any, index: any) => {
-                                                        return (
-                                                            <MenuItem key={index} value={row.value}>{row.name}</MenuItem>
-                                                        )
-                                                    })}
-
-                                                </TextField>
-                                            </Grid>
-                                            <Grid container item md={8}>
-                                                <TextField fullWidth id="outlined-basic" label="Buscar paciente *" variant="outlined"
-                                                    value={numDoc} onChange={handleChangeNumDoc} onKeyPress={(event) => buscarDocEnter(event, numDoc)}
-                                                    inputProps={
-                                                        { readOnly: true, }
-                                                    }
-                                                    InputProps={{
-                                                        style: {
-                                                            cursor: "pointer"
-                                                        },
-                                                        endAdornment: (
-                                                            <InputAdornment position="end" >
-                                                                <SearchSharpIcon onClick={() => buscarPaciente(numDoc)} />
-                                                            </InputAdornment>
-                                                        ),
-                                                    }}
-                                                />
-                                            </Grid>
-                                        </Grid>
-                                        <Grid container spacing={2} mt={0.5}>
-                                            <Grid container item md={4} >
-                                                <TextField fullWidth id="outlined-basic" label="Nombres" variant="outlined" value={nombres} onChange={handleChangeNombres}
-                                                    inputProps={
-                                                        { readOnly: true, }
-                                                    } />
-                                            </Grid>
-                                            <Grid container item md={4}>
-                                                <TextField fullWidth id="outlined-basic" label="Apellido paterno" variant="outlined" value={apePa} onChange={handleChangeApePa}
-                                                    inputProps={
-                                                        { readOnly: true, }
-                                                    } />
-                                            </Grid>
-                                            <Grid container item md={4}>
-                                                <TextField fullWidth id="outlined-basic" label="Apellido materno" variant="outlined" value={apeMa} onChange={handleChangeApeMa}
-                                                    inputProps={
-                                                        { readOnly: true, }
-                                                    } />
-                                            </Grid>
-                                        </Grid>
-                                        <Grid container spacing={2} mt={0.5}>
-                                            <Grid container item md={2.5} >
-                                                <TextField id="outlined-basic" label="Sede" variant="outlined"
-                                                    select fullWidth value={sede} onChange={handleChangeSede}
-                                                >
-                                                    {sedeList.map((row: any, index: any) => {
-                                                        return (
-                                                            <MenuItem key={index} value={row.id}>{row.name} </MenuItem>
-                                                        )
-                                                    })}
-
-                                                </TextField>
-                                            </Grid>
-                                            <Grid container item md={2.5}>
-                                                <TextField id="outlined-basic" label="Convenio" variant="outlined"
-                                                    select fullWidth value={convenio} onChange={handleChangeConvenio}
-                                                >
-                                                    {convenioList.map((row: any, index: any) => {
-                                                        return (
-                                                            <MenuItem key={index} value={row.value}>{row.label} </MenuItem>
-                                                        )
-                                                    })}
-
-                                                </TextField>
-                                            </Grid>
-                                            <Grid container item md={2.5}>
-                                                <TextField id="outlined-basic" label="Lista de precios" variant="outlined"
-                                                    select fullWidth value={listaPrecio} onChange={handleChangeListaPrecio}
-                                                    disabled={abrirListaPrecios}
-                                                >
-                                                    {listaPrecioList.map((row: any, index: any) => {
-                                                        return (
-                                                            <MenuItem key={index} value={row.id}>{row.name} </MenuItem>
-                                                        )
-                                                    })}
-
-                                                </TextField>
-                                            </Grid>
-                                            <Grid container item md={2.5}>
-                                                <TextField id="outlined-basic" label="Referencia" variant="outlined"
-                                                    select fullWidth value={referencia} onChange={handleChangeReferencia}
-                                                >
-                                                    <MenuItem value="">
-                                                        <Button onClick={handleOpenAbrirAgregarReferencia} variant="contained" style={{ width: '20.5ch', height: '4.4ch', backgroundColor: "rgb(0 85 169)", color: "white", fontFamily: "Quicksand", fontWeight: "900", fontSize: "1.15rem" }}>Crear Nuevo</Button>
-                                                    </MenuItem>
-                                                    {referenciaList.map((row: any, index: any) => {
-                                                        return (
-                                                            <MenuItem key={index} value={row.id}>{row.refererName} </MenuItem>
-                                                        )
-                                                    })}
-
-                                                </TextField>
-                                            </Grid>
-                                            <Grid container item md={2}>
-                                                <TextField fullWidth id="outlined-basic" label="Codigo referencia" variant="outlined" value={codigoReferencia} onChange={handleChangeCodigoReferencia} />
-                                            </Grid>
-                                        </Grid>
-                                        <Grid container spacing={2} mt={0.5}>
-                                            <Grid container item md={6}>
-                                                <TextField fullWidth id="outlined-basic" label="Observaciones del referente" variant="outlined" value={observacionesReferente} onChange={handleChangeObservacionesReferente} />
-                                            </Grid>
-                                            <Grid container item md={6}>
-                                                <TextField id="outlined-basic" label="Medico que indica" variant="outlined"
-                                                    select fullWidth value={medico} onChange={handleChangeMedico}
-                                                >
-                                                    <MenuItem value="">
-                                                        <Button onClick={handleOpenAbrirAgregarMedico} variant="contained" style={{ width: '20.5ch', height: '4.4ch', backgroundColor: "rgb(0 85 169)", color: "white", fontFamily: "Quicksand", fontWeight: "900", fontSize: "1.15rem" }}>Crear Nuevo</Button>
-                                                    </MenuItem>
-                                                    {medicoList.map((row: any, index: any) => {
-                                                        return (
-                                                            <MenuItem key={index} value={row.id}>{row.doctorName} </MenuItem>
-                                                        )
-                                                    })}
-
-                                                </TextField>
-                                            </Grid>
-                                        </Grid>
+                        <Paper sx={{ width: '100%', mb: 20 }}>
+                            <div>
+                                <TabContext value={values}>
+                                    <Box >
+                                        <Tabs value={values} scrollButtons="auto" variant="scrollable" indicatorColor="primary" textColor="primary" onChange={handleChange}>
+                                            <Tab className="h-64 normal-case" label="Datos de la Cita" value="1" />
+                                            <Tab className="h-64 normal-case" label="Examenes" value="2" />
+                                            <Tab className="h-64 normal-case" label="Fecha y Hora" value="3" />
+                                        </Tabs>
                                     </Box>
-                                </TabPanel>
-                                <TabPanel value="2">
-                                    <Box sx={{ flexGrow: 1 }}>
-                                        <Grid container spacing={2}>
-                                            <Grid container item md={6} >
-                                                <Button onClick={handleOpenAgregarExamen} variant="contained" style={{ width: '20.5ch', height: '4.4ch', backgroundColor: "rgb(0 85 169)", color: "white", fontFamily: "Quicksand", fontWeight: "900", fontSize: "1.15rem" }}>Agregar Examenes</Button>
-                                            </Grid>
-                                            <Grid container item md={6} spacing={2} >
+                                    <TabPanel value="1">
+                                        <Box sx={{ flexGrow: 1 }}>
+                                            <Grid container spacing={2}>
                                                 <Grid container item md={4} >
-                                                    <TextField id="outlined-basic" label="Precio total *" variant="outlined"
-                                                        fullWidth value={"S/."+precio} onChange={handleChangePrecio}
+                                                    <TextField id="outlined-basic" label="Metodo de busqueda" variant="outlined"
+                                                        select fullWidth value={tipoDoc} onChange={handleChangeTypeDoc}
+
+                                                        inputProps={
+                                                            { readOnly: true, }
+                                                        }
+                                                    >
+                                                        {tipoDocList.map((row: any, index: any) => {
+                                                            return (
+                                                                <MenuItem key={index} value={row.value}>{row.name}</MenuItem>
+                                                            )
+                                                        })}
+
+                                                    </TextField>
+                                                </Grid>
+                                                <Grid container item md={8}>
+                                                    <TextField fullWidth id="outlined-basic" label="Buscar paciente *" variant="outlined"
+                                                        value={numDoc} onChange={handleChangeNumDoc} onKeyPress={(event) => buscarDocEnter(event, numDoc)}
+                                                        inputProps={
+                                                            { readOnly: true, }
+                                                        }
+                                                        InputProps={{
+                                                            style: {
+                                                                cursor: "pointer"
+                                                            },
+                                                            endAdornment: (
+                                                                <InputAdornment position="end" >
+                                                                    <SearchSharpIcon />
+                                                                </InputAdornment>
+                                                            ),
+                                                        }}
+                                                    />
+                                                </Grid>
+                                            </Grid>
+                                            <Grid container spacing={2} mt={0.5}>
+                                                <Grid container item md={4} >
+                                                    <TextField fullWidth id="outlined-basic" label="Nombres" variant="outlined" value={nombres} onChange={handleChangeNombres}
                                                         inputProps={
                                                             { readOnly: true, }
                                                         } />
                                                 </Grid>
-                                                <Grid container item md={4} >
-                                                    <TextField id="outlined-basic" label="Descuento *" variant="outlined"
-                                                        fullWidth value={descuento} type='number' onChange={handleChangeDescuento} />
+                                                <Grid container item md={4}>
+                                                    <TextField fullWidth id="outlined-basic" label="Apellido paterno" variant="outlined" value={apePa} onChange={handleChangeApePa}
+                                                        inputProps={
+                                                            { readOnly: true, }
+                                                        } />
                                                 </Grid>
-                                                <Grid container item md={4} >
-                                                    <TextField id="outlined-basic" label="Precio final *" variant="outlined"
-                                                        fullWidth value={"S/."+precioFinal} onChange={handleChangePrecioFinal}
+                                                <Grid container item md={4}>
+                                                    <TextField fullWidth id="outlined-basic" label="Apellido materno" variant="outlined" value={apeMa} onChange={handleChangeApeMa}
                                                         inputProps={
                                                             { readOnly: true, }
                                                         } />
                                                 </Grid>
                                             </Grid>
-                                        </Grid>
-                                        <Grid container spacing={2} mt={0.5}>
-                                            <Grid container item md={12}>
-                                                <InputLabel style={{ color: "black", fontFamily: "Quicksand", fontWeight: "400", fontSize: "1.8rem" }} >Exámenes agregados</InputLabel>
+                                            <Grid container spacing={2} mt={0.5}>
+                                                <Grid container item md={2.5} >
+                                                    <TextField id="outlined-basic" label="Sede" variant="outlined"
+                                                        select fullWidth value={sede} onChange={handleChangeSede}
+                                                    >
+                                                        {sedeList.map((row: any, index: any) => {
+                                                            return (
+                                                                <MenuItem key={index} value={row.id}>{row.name} </MenuItem>
+                                                            )
+                                                        })}
+
+                                                    </TextField>
+                                                </Grid>
+                                                <Grid container item md={2.5}>
+                                                    <TextField id="outlined-basic" label="Convenio" variant="outlined"
+                                                        select fullWidth value={convenio} onChange={handleChangeConvenio}
+                                                    >
+                                                        {convenioList.map((row: any, index: any) => {
+                                                            return (
+                                                                <MenuItem key={index} value={row.value}>{row.label} </MenuItem>
+                                                            )
+                                                        })}
+
+                                                    </TextField>
+                                                </Grid>
+                                                <Grid container item md={2.5}>
+                                                    <TextField id="outlined-basic" label="Lista de precios" variant="outlined"
+                                                        select fullWidth value={listaPrecio} onChange={handleChangeListaPrecio}
+                                                        disabled={abrirListaPrecios}
+                                                    >
+                                                        {listaPrecioList.map((row: any, index: any) => {
+                                                            return (
+                                                                <MenuItem key={index} value={row.id}>{row.name} </MenuItem>
+                                                            )
+                                                        })}
+
+                                                    </TextField>
+                                                </Grid>
+                                                <Grid container item md={2.5}>
+                                                    <TextField id="outlined-basic" label="Referencia" variant="outlined"
+                                                        select fullWidth value={referencia} onChange={handleChangeReferencia}
+                                                    >
+                                                        <MenuItem value="">
+                                                            <Button onClick={handleOpenAbrirAgregarReferencia} variant="contained" style={{ width: '20.5ch', height: '4.4ch', backgroundColor: "rgb(0 85 169)", color: "white", fontFamily: "Quicksand", fontWeight: "900", fontSize: "1.15rem" }}>Crear Nuevo</Button>
+                                                        </MenuItem>
+                                                        {referenciaList.map((row: any, index: any) => {
+                                                            return (
+                                                                <MenuItem key={index} value={row.id}>{row.refererName} </MenuItem>
+                                                            )
+                                                        })}
+
+                                                    </TextField>
+                                                </Grid>
+                                                <Grid container item md={2}>
+                                                    <TextField fullWidth id="outlined-basic" label="Codigo referencia" variant="outlined" value={codigoReferencia} onChange={handleChangeCodigoReferencia} />
+                                                </Grid>
                                             </Grid>
-                                        </Grid>
-                                        <Grid container spacing={2} mt={0.5}>
-                                            <Grid container item md={12}>
+                                            <Grid container spacing={2} mt={0.5}>
+                                                <Grid container item md={6}>
+                                                    <TextField fullWidth id="outlined-basic" label="Observaciones del referente" variant="outlined" value={observacionesReferente} onChange={handleChangeObservacionesReferente} />
+                                                </Grid>
+                                                <Grid container item md={6}>
+                                                    <TextField id="outlined-basic" label="Medico que indica" variant="outlined"
+                                                        select fullWidth value={medico} onChange={handleChangeMedico}
+                                                    >
+                                                        <MenuItem value="">
+                                                            <Button onClick={handleOpenAbrirAgregarMedico} variant="contained" style={{ width: '20.5ch', height: '4.4ch', backgroundColor: "rgb(0 85 169)", color: "white", fontFamily: "Quicksand", fontWeight: "900", fontSize: "1.15rem" }}>Crear Nuevo</Button>
+                                                        </MenuItem>
+                                                        {medicoList.map((row: any, index: any) => {
+                                                            return (
+                                                                <MenuItem key={index} value={row.id}>{row.doctorName} </MenuItem>
+                                                            )
+                                                        })}
 
-                                                <Box sx={{ width: '100%' }}>
-                                                    <Paper sx={{ width: '100%', mb: 2 }} className="card-table">
-                                                        <TableContainer>
-                                                            <Table
-                                                                sx={{ minWidth: 750 }}
-                                                                aria-labelledby="tableTitle"
-                                                                size={'medium'}
-                                                            >
-                                                                <EnhancedTableHead
-                                                                    numSelected={selected.length}
-                                                                    order={order}
-                                                                    orderBy={orderBy}
-                                                                    onRequestSort={handleRequestSort}
-                                                                    rowCount={rows.length}
-                                                                />
-                                                                <TableBody>
-                                                                    {stableSort(rows, getComparator(order, orderBy))
-                                                                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                                                        .map((row: any, index: any) => {
-                                                                            const labelId = `enhanced-table-checkbox-${index}`;
+                                                    </TextField>
+                                                </Grid>
+                                            </Grid>
+                                        </Box>
+                                    </TabPanel>
+                                    <TabPanel value="2">
+                                        <Box sx={{ flexGrow: 1 }}>
+                                            <Grid container spacing={2}>
+                                                <Grid container item md={6} >
+                                                    <Button onClick={handleOpenAgregarExamen} variant="contained" style={{ width: '20.5ch', height: '4.4ch', backgroundColor: "rgb(0 85 169)", color: "white", fontFamily: "Quicksand", fontWeight: "900", fontSize: "1.15rem" }}>Agregar Examenes</Button>
+                                                </Grid>
+                                                <Grid container item md={6} spacing={2} >
+                                                    <Grid container item md={4} >
+                                                        <TextField id="outlined-basic" label="Precio total *" variant="outlined"
+                                                            fullWidth value={"S/." + precio} onChange={handleChangePrecio}
+                                                            inputProps={
+                                                                { readOnly: true, }
+                                                            } />
+                                                    </Grid>
+                                                    <Grid container item md={4} >
+                                                        <TextField id="outlined-basic" label="Descuento *" variant="outlined"
+                                                            fullWidth value={descuento} type='number' onChange={handleChangeDescuento} />
+                                                    </Grid>
+                                                    <Grid container item md={4} >
+                                                        <TextField id="outlined-basic" label="Precio final *" variant="outlined"
+                                                            fullWidth value={"S/." + precioFinal} onChange={handleChangePrecioFinal}
+                                                            inputProps={
+                                                                { readOnly: true, }
+                                                            } />
+                                                    </Grid>
+                                                </Grid>
+                                            </Grid>
+                                            <Grid container spacing={2} mt={0.5}>
+                                                <Grid container item md={12}>
+                                                    <InputLabel style={{ color: "black", fontFamily: "Quicksand", fontWeight: "400", fontSize: "1.8rem" }} >Exámenes agregados</InputLabel>
+                                                </Grid>
+                                            </Grid>
+                                            <Grid container spacing={2} mt={0.5}>
+                                                <Grid container item md={12}>
 
-                                                                            return (
-                                                                                <TableRow
-                                                                                    hover
-                                                                                    tabIndex={-1}
-                                                                                    key={row.id}
-                                                                                >
-                                                                                    <TableCell
-                                                                                        component="th"
-                                                                                        id={labelId}
-                                                                                        scope="row"
-                                                                                        style={{ color: "black", fontFamily: "Quicksand", fontWeight: "400", fontSize: "1.1rem" }}
+                                                    <Box sx={{ width: '100%' }}>
+                                                        <Paper sx={{ width: '100%', mb: 2 }} className="card-table">
+                                                            <TableContainer>
+                                                                <Table
+                                                                    sx={{ minWidth: 750 }}
+                                                                    aria-labelledby="tableTitle"
+                                                                    size={'medium'}
+                                                                >
+                                                                    <EnhancedTableHead
+                                                                        numSelected={selected.length}
+                                                                        order={order}
+                                                                        orderBy={orderBy}
+                                                                        onRequestSort={handleRequestSort}
+                                                                        rowCount={rows.length}
+                                                                    />
+                                                                    <TableBody>
+                                                                        {stableSort(rows, getComparator(order, orderBy))
+                                                                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                                                                            .map((row: any, index: any) => {
+                                                                                const labelId = `enhanced-table-checkbox-${index}`;
+
+                                                                                return (
+                                                                                    <TableRow
+                                                                                        hover
+                                                                                        tabIndex={-1}
+                                                                                        key={row.id}
                                                                                     >
-                                                                                        {row.code}
-                                                                                    </TableCell>
-                                                                                    <TableCell
-                                                                                        align="left"
-                                                                                        style={{ color: "black", fontFamily: "Quicksand", fontWeight: "400", fontSize: "1.1rem" }}
-                                                                                    >
-                                                                                        {row.name}
-                                                                                    </TableCell>
-                                                                                    <TableCell
-                                                                                        align="left"
-                                                                                        style={{ color: "black", fontFamily: "Quicksand", fontWeight: "400", fontSize: "1.1rem" }}
-                                                                                    >
-                                                                                        {row.price}
-                                                                                    </TableCell>
-                                                                                    <TableCell align="left">
-                                                                                        <div style={{ display: "flex" }}>
-                                                                                            <div onClick={() => eliminarExamen(row.id)} style={{ paddingRight: "5px" }}><Button variant="contained" style={{ color: "white", fontFamily: "Quicksand", fontWeight: "500", fontSize: "1rem" }}> ELIMINAR</Button></div>
-                                                                                        </div>
-                                                                                    </TableCell>
-                                                                                </TableRow>
-                                                                            );
-                                                                        })}
-                                                                    {emptyRows > 0 && (
-                                                                        <TableRow
-                                                                            style={{
-                                                                                height: (53) * emptyRows,
-                                                                            }}
-                                                                        >
-                                                                            <TableCell colSpan={6} />
-                                                                        </TableRow>
-                                                                    )}
-                                                                </TableBody>
-                                                            </Table>
-                                                        </TableContainer>
-                                                        <TablePagination
-                                                            rowsPerPageOptions={[5, 15, 20]}
-                                                            component="div"
-                                                            count={rows.length}
-                                                            rowsPerPage={rowsPerPage}
-                                                            page={page}
-                                                            labelRowsPerPage={"Filas por Pagina: "}
-                                                            labelDisplayedRows={
-                                                                ({ from, to, count }) => {
-                                                                    return '' + from + '-' + to + ' de ' + count
+                                                                                        <TableCell
+                                                                                            component="th"
+                                                                                            id={labelId}
+                                                                                            scope="row"
+                                                                                            style={{ color: "black", fontFamily: "Quicksand", fontWeight: "400", fontSize: "1.1rem" }}
+                                                                                        >
+                                                                                            {row.code}
+                                                                                        </TableCell>
+                                                                                        <TableCell
+                                                                                            align="left"
+                                                                                            style={{ color: "black", fontFamily: "Quicksand", fontWeight: "400", fontSize: "1.1rem" }}
+                                                                                        >
+                                                                                            {row.name}
+                                                                                        </TableCell>
+                                                                                        <TableCell
+                                                                                            align="left"
+                                                                                            style={{ color: "black", fontFamily: "Quicksand", fontWeight: "400", fontSize: "1.1rem" }}
+                                                                                        >
+                                                                                            {row.price}
+                                                                                        </TableCell>
+                                                                                        <TableCell align="left">
+                                                                                            <div style={{ display: "flex" }}>
+                                                                                                <div onClick={() => eliminarExamen(row.id)} style={{ paddingRight: "5px" }}><Button variant="contained" style={{ color: "white", fontFamily: "Quicksand", fontWeight: "500", fontSize: "1rem" }}> ELIMINAR</Button></div>
+                                                                                            </div>
+                                                                                        </TableCell>
+                                                                                    </TableRow>
+                                                                                );
+                                                                            })}
+                                                                        {emptyRows > 0 && (
+                                                                            <TableRow
+                                                                                style={{
+                                                                                    height: (53) * emptyRows,
+                                                                                }}
+                                                                            >
+                                                                                <TableCell colSpan={6} />
+                                                                            </TableRow>
+                                                                        )}
+                                                                    </TableBody>
+                                                                </Table>
+                                                            </TableContainer>
+                                                            <TablePagination
+                                                                rowsPerPageOptions={[5, 15, 20]}
+                                                                component="div"
+                                                                count={rows.length}
+                                                                rowsPerPage={rowsPerPage}
+                                                                page={page}
+                                                                labelRowsPerPage={"Filas por Pagina: "}
+                                                                labelDisplayedRows={
+                                                                    ({ from, to, count }) => {
+                                                                        return '' + from + '-' + to + ' de ' + count
+                                                                    }
                                                                 }
-                                                            }
-                                                            onPageChange={handleChangePage}
-                                                            onRowsPerPageChange={handleChangeRowsPerPage}
-                                                        />
-                                                    </Paper>
-                                                </Box>
+                                                                onPageChange={handleChangePage}
+                                                                onRowsPerPageChange={handleChangeRowsPerPage}
+                                                            />
+                                                        </Paper>
+                                                    </Box>
 
+                                                </Grid>
                                             </Grid>
-                                        </Grid>
-                                    </Box>
-                                </TabPanel>
-                                <TabPanel value="3">
-                                    <Box sx={{ flexGrow: 1 }}>
-                                        <Grid container spacing={2}>
-                                            <Grid container item md={4} >
-                                                <TextField type="date" focused fullWidth id="outlined-basic" label="Fecha *" variant="outlined" value={fecha} onChange={handleChangFecha} />
+                                        </Box>
+                                    </TabPanel>
+                                    <TabPanel value="3">
+                                        <Box sx={{ flexGrow: 1 }}>
+                                            <Grid container spacing={2}>
+                                                <Grid container item md={4} >
+                                                    <TextField type="date" focused fullWidth id="outlined-basic" label="Fecha *" variant="outlined" value={fecha} onChange={handleChangFecha} />
+                                                </Grid>
+                                                <Grid container item md={4} >
+                                                    <TextField type="time" focused fullWidth id="outlined-basic" label="Hora *" variant="outlined" value={hora} onChange={handleChangeHora} />
+                                                </Grid>
+                                                <Grid container item md={4} >
+                                                    <TextField type="date" focused fullWidth id="outlined-basic" label="Fecha de creación" variant="outlined" value={fechaCreacion} onChange={handleChangeFechaCreacion}
+                                                        inputProps={
+                                                            { readOnly: true, }
+                                                        } />
+                                                </Grid>
                                             </Grid>
-                                            <Grid container item md={4} >
-                                                <TextField type="time" focused fullWidth id="outlined-basic" label="Hora *" variant="outlined" value={hora} onChange={handleChangeHora} />
-                                            </Grid>
-                                            <Grid container item md={4} >
-                                                <TextField type="date" focused fullWidth id="outlined-basic" label="Fecha de creación" variant="outlined" value={fechaCreacion} onChange={handleChangeFechaCreacion}
-                                                    inputProps={
-                                                        { readOnly: true, }
-                                                    } />
-                                            </Grid>
-                                        </Grid>
-                                    </Box>
-                                </TabPanel>
-                            </TabContext>
-                        </div>
+                                        </Box>
+                                    </TabPanel>
+                                </TabContext>
+                            </div>
+                        </Paper>
                     </CardContent>
                 </div >
                 <div>
                     <Modal
+                        id="custom-target"
                         keepMounted
                         open={asignarExamenes}
+                        style={{ overflowY: "scroll" }}
                         onClose={handleCloseAsignarExamenes}
                         aria-labelledby="keep-mounted-modal-title"
                         aria-describedby="keep-mounted-modal-description"
@@ -1163,7 +1376,7 @@ export default function TbEditarCita() {
                                         variant="outlined" value={servicio} onChange={handleChangeServicio}
                                         select
                                     >
-                                        {servicioList.map((row: any, index: any) => {
+                                        {eliminarDuplicados(servicioList).map((row: any, index: any) => {
                                             return (
                                                 <MenuItem key={index} value={row.value}>{row.label} </MenuItem>
                                             )
@@ -1175,7 +1388,7 @@ export default function TbEditarCita() {
                                 <Grid item xs={12}>
                                     <Box sx={{ width: '100%' }}>
                                         <Paper sx={{ width: '100%', mb: 2, borderRadius: "12px" }}>
-                                            <TableContainer>
+                                            <TableContainer style={{ maxHeight: 300, overflowY: "scroll" }}>
                                                 <Table
                                                     sx={{ minWidth: 750 }}
                                                     aria-labelledby="tableTitle"
@@ -1220,14 +1433,15 @@ export default function TbEditarCita() {
                                                                             align="left"
                                                                             style={{ color: "black", fontFamily: "Quicksand", fontWeight: "400", fontSize: "1.1rem" }}
                                                                         >
-                                                                            {row.service.name}
+                                                                            {row.method.namemethod}
                                                                         </TableCell>
                                                                         <TableCell
                                                                             align="left"
                                                                             style={{ color: "black", fontFamily: "Quicksand", fontWeight: "400", fontSize: "1.1rem" }}
                                                                         >
-                                                                            {row.description}
+                                                                            {row.service.name}
                                                                         </TableCell>
+
                                                                         <TableCell align="left">
                                                                             <div style={{ display: "flex" }}>
                                                                                 <div style={{ paddingRight: "5px" }}>
@@ -1247,6 +1461,14 @@ export default function TbEditarCita() {
                                                                 <TableCell colSpan={6} />
                                                             </TableRow>
                                                         )}
+
+                                                        {
+                                                            rowsAsignar.length == 0 ? <TableRow >
+                                                                <TableCell colSpan={8} >
+                                                                    No agrego examenes
+                                                                </TableCell>
+                                                            </TableRow> : ""
+                                                        }
                                                     </TableBody>
                                                 </Table>
                                             </TableContainer>
@@ -1283,7 +1505,7 @@ export default function TbEditarCita() {
                     </Modal>
                 </div>
                 <div>
-                    <Modal
+                    <Modal id="custom-target2"
                         keepMounted
                         open={abrirAgregarMedico}
                         onClose={handleCloseAbrirAgregarMedico}
@@ -1291,7 +1513,7 @@ export default function TbEditarCita() {
                         aria-describedby="keep-mounted-modal-description"
                     >
                         <Box sx={style}>
-                            <InputLabel style={{ color: "black", fontFamily: "Quicksand", fontWeight: "400", fontSize: "1.5rem" }} >Nueva colegiatura</InputLabel >
+                            <InputLabel style={{ color: "black", fontFamily: "Quicksand", fontWeight: "400", fontSize: "1.5rem" }} >Crear nuevo medico</InputLabel >
 
                             <Grid container item xs mt={2.5}>
                                 <TextField fullWidth id="outlined-basic" label="Nombre del Médico" variant="outlined" value={nombreMedico} onChange={handleChangeNombreMedico} />
@@ -1311,7 +1533,7 @@ export default function TbEditarCita() {
                     </Modal>
                 </div>
                 <div>
-                    <Modal
+                    <Modal id="custom-target3"
                         keepMounted
                         open={abrirAgregarReferencia}
                         onClose={handleCloseAbrirAgregarReferencia}

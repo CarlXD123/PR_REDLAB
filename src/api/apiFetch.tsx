@@ -12,8 +12,8 @@ export function apiFetch(endpoint:any, options = {}, query = false) {
       const fetchOptions = apiOptions(options);
       const fetchEndpoint = apiEndpoint(endpoint, qs);
       //debugger;
-      console.log(fetchEndpoint,fetchOptions)
       const response = await fetch(fetchEndpoint, fetchOptions);
+      console.log(response);
       if(response.status === 401){
         throw new Error("Credenciales incorrectas");
       }
@@ -33,7 +33,7 @@ export function apiEndpoint(endpoint:any, qs:any) {
     query = `?${qs}`;
   }
 
-  let dato = `${API_URL_BACKEND}`;
+  //let dato = `${API_URL_BACKEND}`;
   return `${API_URL_BACKEND}${endpoint}${query}`;
 }
 
@@ -65,6 +65,6 @@ export function apiOptions(options:any = {}) {
   if (!newOptions.body) {
     delete newOptions.body;
   }
-  const daton  = newOptions
+  //const daton  = newOptions
   return newOptions;
 }

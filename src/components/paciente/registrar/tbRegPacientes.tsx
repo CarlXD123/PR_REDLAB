@@ -1,4 +1,4 @@
-import { Button, CardContent, Grid, InputLabel, MenuItem, Tab, TextField } from "@mui/material";
+import { Button, CardContent, Grid, Hidden, InputLabel, MenuItem, Tab, TextField } from "@mui/material";
 import { Box } from "@mui/system";
 import React, { ChangeEvent } from "react";
 import { Contenido } from "../../Home";
@@ -6,11 +6,13 @@ import KeyboardBackspaceRoundedIcon from '@mui/icons-material/KeyboardBackspaceR
 import TabContext from '@material-ui/lab/TabContext';
 import TabList from '@material-ui/lab/TabList';
 import TabPanel from '@material-ui/lab/TabPanel';
-import { getDistrictsForProvince,savePatientApi, getProvincesForRegion, getRegionsApi, getTypeDocsApi } from "../../../api";
+import { Tabs } from '@mui/material';
+import { getDistrictsForProvince,savePatientApi, getUserApi, getPagedTypeDocsApi , saveNationApi, getNationAllApi, getProvincesForRegion, getPagedEmployeesApi, getPagedPatientsApi, getRegionsApi, getTypeDocsApi } from "../../../api";
 import { civilStatus, genders, nationality } from "../../../constant";
 import { Link } from "react-router-dom";
 import { Modal } from "@material-ui/core";
 import moment from "moment";
+import Swal from 'sweetalert2';
 
 export default function TbRegPaciente() {
     const getAgeFromBirthday = (birthday:any) => {
@@ -25,10 +27,19 @@ export default function TbRegPaciente() {
           }
         return null;
     }
+    const getBirthdateFromAge = (age: any) => {
+        if (age >= 0) {
+            let birthdate = moment()
+              .subtract(age, 'years')
+            return birthdate.format('YYYY-MM-DD');
+          }
+          return null;
+    };
 
     const [values, setValues] = React.useState<string>("1");
     //#region GET-SET textfield
 
+    const [nationList, setNationList] = React.useState<any[]>([]);
     const [tipoDocList, setTipoDocList] = React.useState<any[]>([]);
     const [tipoDoc, setTipoDoc] = React.useState<any>('');
     const [numDoc, setNumDoc] = React.useState<any>('');
@@ -41,6 +52,9 @@ export default function TbRegPaciente() {
     const [feNacimiento, setFeNacimiento] = React.useState<any>('');
     const [edad, setEdad] = React.useState<any>('');
     const [nacionalidad, setNacionalidad] = React.useState<any>('');
+    const [nombreNation, setNombreNation] = React.useState<any>('');
+    const [descripcionNation, setDescripcionNation] = React.useState<any>('');
+    const [abrirNation, setAbrirNation] = React.useState<any>(false);
 
     const [regionList, setRegionList] = React.useState<any[]>([]);
     const [abrirGuardarPaciente, setAbrirGuardarPaciente] = React.useState<any>(false);
@@ -67,13 +81,18 @@ export default function TbRegPaciente() {
     const [distrito, setDistrito] = React.useState<any>('');
     const [direcLugar, setDirecLugar] = React.useState<any>('');
 
+   
+    const [rows, setRows] = React.useState<any>([]);
+    const [rows2, setRows2] = React.useState<any>([]);
+    const [rows3, setRows3] = React.useState<any>([]);
+
     const [correo, setCorreo] = React.useState<any>('');
     const [telMovil, setTelMovil] = React.useState<any>('');
     const [telFijo, setTelFijo] = React.useState<any>('');
     //#endregion
 
     //#region handles de Vistas
-
+    
     //#region Primera Vista(Datos Personales)
     const handleChange = (event: ChangeEvent<{}>, newValue: any) => {
         setValues(newValue);
@@ -105,14 +124,37 @@ export default function TbRegPaciente() {
     };
     const handleChangeFeNacimiento = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFeNacimiento(event.target.value);
-        setEdad(getAgeFromBirthday(event.target.value));
+        if (event.target.value === "") {
+            // Si la fecha de nacimiento está vacía, también vacía el campo de edad
+            setEdad("");
+        } else {
+            // Si se ingresó una fecha de nacimiento, calcula la edad correspondiente
+            setEdad(getAgeFromBirthday(event.target.value));
+        }
     };
     const handleChangeEdad = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setEdad(event.target.value);
+        if (event.target.value === "" || /^[0-9]+$/.test(event.target.value)) {
+           setEdad(event.target.value);
+
+           if (event.target.value === "") {
+            // Si la edad está vacía, borra la fecha de nacimiento
+            setFeNacimiento("");
+        } else {
+            // Si se ingresó una edad, calcula la fecha de nacimiento correspondiente
+            setFeNacimiento(getBirthdateFromAge(event.target.value));
+        }
+        }
     };
+  
     const handleChangenacionalidad = (event: React.ChangeEvent<HTMLInputElement>) => {
         setNacionalidad(event.target.value);
     };
+    const handleChangeNombreNation = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setNombreNation(event.target.value);
+    };
+    const handleChangeDescripcionNation = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setDescripcionNation(event.target.value)
+    }
     //#endregion
 
     //#region Segunda Vista(Domicilio)
@@ -200,6 +242,10 @@ export default function TbRegPaciente() {
         setAbrirGuardarErrorGenero(false);
     }
 
+    const handleCloseNation = () => {
+        setAbrirNation(false);
+    }
+
     const handleChangeDirecLugar = (event: React.ChangeEvent<HTMLInputElement>) => {
         setDirecLugar(event.target.value);
     };
@@ -233,127 +279,439 @@ export default function TbRegPaciente() {
 
     React.useEffect(() => {
         //#region llamadas al servicio
-        getTypeDocsApi().then((ag: any) => {
+        getPagedTypeDocsApi ().then((ag: any) => {
             setTipoDocList(ag.data)
+        });
+        getNationAllApi().then((ag: any) => {
+            setNationList(ag.data)
+        });
+        getUserApi().then((ag: any) => {
+           setRows3(ag.data)
         });
         getRegionsApi().then((ag: any) => {
             setRegionList(ag.data);
         });
+        getPagedPatientsApi(0, 1000).then((ap: any) => {
+            let mapeado: any = [];
+            ap.data.forEach((d: any) => {
+              mapeado.push({
+                tipoDocumento: d.typeDoc.name,
+                dni: d.typeDoc.dni,
+                nombreCompleto: d.person.name + " " + d.person.lastNameP + " " + d.person.lastNameM,
+                numHistoriaCli: d.person.historyNumber,
+                nombre: d.person.name,
+                apellidoPa: d.person.lastNameP,
+                apellidoMa: d.person.lastNameM,
+                genero: d.person.genderStr,
+                estCivil: d.person.civilStatusStr,
+                fechaNacimiento: d.person.birthDate,
+                nacionalidad: d.person.nationality,
+    
+                region: d.region.name,
+                provincia: d.province.name,
+                distrito: d.district.name,
+                direcLugar: d.person.address,
+    
+    
+                correo: d.user.username,
+                telMovil: d.person.phoneNumber,
+                telFijo: d.person.tlfNumber,
+                numdoc: d.person.dni,
+    
+                id: d.person.id,
+                userid: d.user.id
+              })
+            });
+            setRows(mapeado)
+          });
+
+          getPagedEmployeesApi(0, 1000).then((ag: any) => {
+            let mapeado: any = [];
+            ag.data.forEach((d: any) => {
+              mapeado.push({
+                tipoDocumento: d.typeDoc.name,
+                dni: d.typeDoc.dni,
+                nombreCompleto: d.person.name + " " + d.person.lastNameP + " " + d.person.lastNameM,
+                nombre: d.person.name,
+                apellidoPa: d.person.lastNameP,
+                apellidoMa: d.person.lastNameM,
+                telMovil: d.person.phoneNumber,
+                telFijo: d.person.tlfNumber,
+                genero: d.person.genderStr,
+                estCivil: d.person.civilStatusStr,
+                fechaNacimiento: d.person.birthDate,
+                fechaAdmision: d.person.admissionDate,
+    
+                region: d.region.name,
+                provincia: d.province.name,
+                distrito: d.district.name,
+                direccion: d.person.typeDirectionStr,
+                referencia: d.person.referencePoint,
+                direcLugar: d.person.address,
+    
+                especialidad: d.speciality.name,
+                cargo: d.typeEmployee.name,
+                profesion: d.profession.name,
+                colegiaturaUno: d.tuition.name,
+                colegiaturaUnoDes: d.tuition.tuitionNumber,
+                colegiaturaDos: d.tuition2.name,
+                colegiaturaDosDes: d.tuition2.tuitionNumber,
+                firma: d.person.digitalSignatureUrl,
+    
+                correo: d.user.username,
+                roles: d.roles[0].name,
+                sede: d.headquarter.name,
+    
+    
+                id: d.person.id,
+                userid: d.user.id
+              })
+            });
+            setRows2(mapeado)
+          });
         //#endregion
     }, []);
 
+    const handleOpenNation = () => {
+        setAbrirNation(true);
+        setNombreNation("");
+        setDescripcionNation("");
+    }
+
+    var errorTipoDoc=()=>{
+        Swal.fire({
+            title: 'Datos personales-Seleccione el tipo de documento',
+            icon: 'warning',
+        })
+    }
+    var errorNumDoc=()=>{
+        Swal.fire({
+            title: 'Datos personales-Ingrese numero de doc',
+            icon: 'warning',
+        })
+    }
+
+    var errorNom=()=>{
+        Swal.fire({
+            title: 'Datos personales-Ingrese el nombre',
+            icon: 'warning',
+        })
+    }
+
+    var errorApePa=()=>{
+        Swal.fire({
+            title: 'Datos personales-Ingrese apellido paterno',
+            icon: 'warning',
+        })
+    }
+
+    var errorApeMa=()=>{
+        Swal.fire({
+            title: 'Datos personales-Ingrese apellido materno',
+            icon: 'warning',
+        })
+    }
+
+    var errorTelMovil=()=>{
+        Swal.fire({
+            title: 'Datos de contacto-Ingrese telefono movil',
+            icon: 'warning',
+        })
+    }
+
+    var errorGenero=()=>{
+        Swal.fire({
+            title: 'Datos personales-Ingrese el genero',
+            icon: 'warning',
+        })
+    }
+
+    var errorFechaNaci=()=>{
+        Swal.fire({
+            title: 'Datos personales-Ingrese fecha de nacimiento',
+            icon: 'warning',
+        })
+    }
+
+    var errorNacio=()=>{
+        Swal.fire({
+            title: 'Datos personales-Ingrese la nacionalidad',
+            icon: 'warning',
+        })
+    }
+    var errorNumHistory=()=>{
+        Swal.fire({
+            title: 'Datos personales-Ingrese el numero de historia clinica',
+            icon: 'warning',
+        })
+    }
+
+    var errorReg=()=>{
+        Swal.fire({
+            title: 'Domicilio-Ingrese un departamento',
+            icon: 'warning',
+        })
+    }
+
+    var errorProv=()=>{
+        Swal.fire({
+            title: 'Domicilio-Ingrese la provincia',
+            icon: 'warning',
+        })
+    }
+
+    var errorDist=()=>{
+        Swal.fire({
+            title: 'Domicilio-Ingrese un distrito',
+            icon: 'warning',
+        })
+    }
+
+    var errorDir=()=>{
+        Swal.fire({
+            title: 'Domicilio-Ingrese una direccion',
+            icon: 'warning',
+        })
+    }
+
+    var errorEstadoCivil=()=>{
+        Swal.fire({
+            title: 'Datos personales-Ingrese estado civil',
+            icon: 'warning',
+        })
+    }
+
+    var errorCorr=()=>{
+        Swal.fire({
+            title: 'Datos de contacto-Ingrese el correo',
+            icon: 'warning',
+        })
+    }
+
+    var guardarPac=()=>{
+        Swal.fire({
+            title: 'Paciente agregado',
+            icon: 'success',
+        })
+    }
+
+    var userRepe=()=>{
+        Swal.fire({
+            title: '!Correo ya existe!',
+            icon: 'warning',
+        })
+    }
+
+    var dniRepe=()=>{
+        Swal.fire({
+            title: '!DNI ya existe!',
+            icon: 'warning',
+        })
+    }
+
+    var NationCreate=()=>{
+        Swal.fire({
+            title: 'La nacionalidad fue creada exitosamente',
+            icon: 'success',
+        })
+    }
+
+    var NationError=()=>{
+        Swal.fire({
+            title: 'La nacionalidad no fue creada',
+            icon: 'warning',
+        })
+    }
+
+    var NationName=()=>{
+        Swal.fire({
+            title: 'Ingrese el nombre de la nacionalidad',
+            icon: 'warning',
+            target: '#custom-target',
+        })
+    }
+
+    var HistoryNumber2=()=>{
+        Swal.fire({
+            title: '!Numero de historia clinica repetido!',
+            icon: 'warning',
+        })
+    }
+
+    const tipoDocListFilt = tipoDocList.filter(
+        (n: any) => ( n.description=="Paciente")
+    ) 
+    const crearNation = () => {
+        if (nombreNation == "") {
+            //alert("Ingrese nombre");
+            NationName()
+            return;
+        }
+       
+        saveNationApi({
+            description: descripcionNation,
+            name: nombreNation.toUpperCase()
+        }).then((x: any) => {
+            if (x.status) {
+                //alert(x.message.text);
+                NationCreate()
+                handleCloseNation();
+                setNombreNation("");
+                setDescripcionNation("");
+                getNationAllApi().then((ag: any) => {
+                    setNationList(ag.data);
+                });
+            } else {
+                //alert(x.text);
+                NationError()
+                return;
+            }
+        })
+    }
+    
+    let dateNow2 = moment().format('YMD');
+    let HourNow2 = moment().format('Hms');
+    let dateNow = moment().format('MD');
+    let HourNow = moment().format('Hms');
+    const docAleatorio=()=>{
+        if(tipoDoc == "4"){
+            setNumDoc("SN"+dateNow+HourNow)
+        }
+    }
+
+    //const correoAleatorio=()=>{
+        //if(tipoDoc == "5"){
+            //setCorreo(nombres.charAt(0).toLowerCase()+dateNow2+HourNow2+"@correo.com")
+        //}
+   // }
+    nationList.sort((a, b) => (a > b ? 1 : a < b ? -1 : 0))
+    const concatena = nombres.charAt(0).toLowerCase()+dateNow2+HourNow2+"@correo.com"
     const crearPaciente = () => {
+
+        let newMail: string = "";
+        const validahistorynumber= rows.some((cred: any) => cred.numHistoriaCli === numHistoria)
         //let mError = "LLenar Campos: \n";
         let error = false;
         //#region validaciones
-        if (tipoDoc == "") {
-            //mError += "Datos personales-Seleccione tipo de documento\n";
+        
+        if (direcLugar == "") {
+            //mError += "Domicilio-Ingrese una direccion \n";
             error = true;
-            setAbrirGuardarErrorTipoDoc(true);
-        }
-        if (numDoc == "") {
-            //mError += "Datos personales-Ingrese numero de doc\n";
-            error = true;
-            setAbrirGuardarErrorNumDoc(true);
-        }
-        if (nombres == "") {
-            //mError += "Datos personales-Ingrese nombre\n";
-            error = true;
-            setAbrirGuardarErrorNom(true);
-        }
-        if (apePa == "") {
-            //mError += "Datos personales-Ingrese apellido paterno\n";
-            error = true;
-            setAbrirGuardarErrorApePa(true);
-        }
-        if (apeMa == "") {
-            //mError += "Datos personales-Ingrese apellido materno\n";
-            error = true;
-            setAbrirGuardarErrorApeMa(true);
-        }
-        if (telMovil == "") {
-            //mError += "Datos personales-Ingrese telefono movil\n";
-            error = true;
-            setAbrirGuardarErrorTelMovil(true);
-        }
-        if (genero == "") {
-            //mError += "Datos personales-Ingrese genero\n";
-            error = true;
-            setAbrirGuardarErrorGenero(true);
-        }
-        if (feNacimiento == "") {
-            //mError += "Datos personales-Ingrese Fecha Nacimiento\n";
-            error = true;
-            setAbrirGuardarErrorFeNacimiento(true);
-        }
-        if (nacionalidad == "") {
-            //mError += "Datos personales-Ingrese Fecha admision\n";
-            error = true;
-            setAbrirGuardarErrorNacionalidad(true);
-        }
-        if (region == "") {
-            //mError += "Domicilio-Seleccione un departamento \n";
-            error = true;
-            setAbrirGuardarErrorRegion(true);
-        }
-        if (provincia == "") {
-            //mError += "Domicilio-Seleccione una provincia \n";
-            error = true;
-            setAbrirGuardarErrorProvincia(true);
+            errorDir()
         }
         if (distrito == "") {
             //mError += "Domicilio-Seleccione un distrito \n";
             error = true;
-            setAbrirGuardarErrorDistrito(true);
+            errorDist()
         }
-        if (direcLugar == "") {
-            //mError += "Domicilio-Ingrese una direccion \n";
+        if (provincia == "") {
+            //mError += "Domicilio-Seleccione una provincia \n";
             error = true;
-            setAbrirGuardarErrorDirecLugar(true);
+            errorProv()
         }
-        if(estadoCivil==""){
+        if (region == "") {
+            //mError += "Domicilio-Seleccione un departamento \n";
+            error = true;
+            errorReg()
+        }
+        if (nacionalidad == "") {
+            //mError += "Datos personales-Ingrese Fecha admision\n";
+            error = true;
+            errorNacio()
+        }
+       
+        if (estadoCivil==""){
             //mError += "Domicilio-Ingrese estado civil \n";
             error = true;
-            setAbrirGuardarErrorECivil(true);
+            errorEstadoCivil()
         }
-        if (correo == "") {
-            //mError += "Datos de contacto-Ingrese correo \n";
+        if (genero == "") {
+            //mError += "Datos personales-Ingrese genero\n";
             error = true;
-            setAbrirGuardarErrorCorreo(true);
+            errorGenero()
+        }
+        if (apeMa == "") {
+            //mError += "Datos personales-Ingrese apellido materno\n";
+            error = true;
+            errorApeMa()
+        }
+        if (apePa == "") {
+            //mError += "Datos personales-Ingrese apellido paterno\n";
+            error = true;
+            errorApePa()
+        }
+        if (nombres == "") {
+            //mError += "Datos personales-Ingrese nombre\n";
+            error = true;
+            errorNom()
+        }
+        if (numHistoria==""){
+            //mError += "Domicilio-Ingrese estado civil \n";
+            error = true;
+            errorNumHistory()
+        }
+        if (numDoc == "") {
+            //mError += "Datos personales-Ingrese numero de doc\n";
+            error = true;
+            errorNumDoc()
+        }
+        if (tipoDoc == "") {
+            //mError += "Datos personales-Seleccione tipo de documento\n";
+            error = true;
+            errorTipoDoc()
+        }
+
+        if(validahistorynumber){
+            HistoryNumber2()
+        }
+
+        if (correo == "" ) {
+            newMail = concatena
+        } else {
+            newMail = correo
+        }
+
+        if(newMail == ""){
+            error= true
+            errorCorr()
         }
         if (error) {
             //alert(mError);
             return;
         }
-        //#endregion 
 
+    
+        //#endregion 
         let data= {
             DistrictId: distrito,
             ProvinceId: provincia,
             RegionId: region,
             TypeDocId: tipoDoc,
             address: direcLugar,
-            birthDate: feNacimiento,
+            birthDate: feNacimiento ? feNacimiento : null,
             civilStatus: estadoCivil,
             dni: numDoc,
             gender: genero,
+            edad: edad ? edad : null,
+            roles: 3,
             historyNumber: numHistoria,
-            lastNameM: apeMa,
-            lastNameP: apePa,
-            name: nombres,
-            nationality: nacionalidad,
-            phoneNumber: telMovil,
-            tlfNumber: telFijo,
-            username: correo
+            lastNameM: apeMa.toUpperCase(),
+            lastNameP: apePa.toUpperCase(),
+            name: nombres.toUpperCase(),
+            NationId: nacionalidad,
+            phoneNumber: telMovil ? telMovil: null,
+            tlfNumber: telFijo ? telFijo: null,
+            username: newMail
         }
         savePatientApi(data).then((x: any) => {
             if(x.status){
                 //alert(x.message.text);
-                setAbrirGuardarPaciente(true);
+                console.log("si me guarde")
+                guardarPac()
                 window.location.href = '/apps/patients'
-            }else{
-                //alert(x.message.text);
-                setAbrirGuardarPacienteError(true);
+            }else {
+                guardarPac()
+                window.location.href = '/apps/patients'
             }
         });
         
@@ -388,15 +746,17 @@ export default function TbRegPaciente() {
                 </Grid>
                 <br></br>
                 <div>
+                    <br></br>
+                    <br></br>
                     <CardContent style={{ backgroundColor: "white", borderRadius: "12px" }}>
                         <div>
                             <TabContext value={values}>
-                                <Box >
-                                    <TabList scrollButtons="auto" variant="scrollable" indicatorColor="primary" textColor="primary" onChange={handleChange} >
+                                <Box>
+                                    <Tabs value={values} scrollButtons="auto" variant="scrollable" indicatorColor="primary" textColor="primary" onChange={handleChange} >
                                         <Tab className="h-64 normal-case" label="Datos personales" value="1" />
                                         <Tab className="h-64 normal-case" label="Domicilio" value="2" />
                                         <Tab className="h-64 normal-case" label="Datos de contacto" value="3" />
-                                    </TabList>
+                                    </Tabs>
                                 </Box>
                                 <TabPanel value="1">
                                     <Box sx={{ flexGrow: 1 }}>
@@ -406,16 +766,16 @@ export default function TbRegPaciente() {
                                                     select fullWidth value={tipoDoc} onChange={handleChangeTypeDoc}
                                                     helperText="Por favor seleccione uno"
                                                 >
-                                                    {tipoDocList.map((row: any, index: any) => {
+                                                    {tipoDocListFilt.map((row: any, index: any) => {
                                                         return (
-                                                            <MenuItem key={index} value={row.value}>{row.name}</MenuItem>
+                                                            <MenuItem key={index} value={row.id}>{row.name}</MenuItem>
                                                         )
                                                     })}
 
                                                 </TextField>
                                             </Grid>
                                             <Grid container item md={4}>
-                                                <TextField fullWidth id="outlined-basic" label="Nro Documento" variant="outlined" value={numDoc} onChange={handleChangeNumDoc} />
+                                                <TextField fullWidth onClick={docAleatorio} id="outlined-basic" label="Nro Documento" variant="outlined" value={numDoc} onChange={handleChangeNumDoc} />
                                             </Grid>
                                             <Grid container item md={4}>
                                                 <TextField fullWidth id="outlined-basic" label="Nro de historia clinica" variant="outlined" value={numHistoria} onChange={handleChangeNumHistoria} />
@@ -463,13 +823,19 @@ export default function TbRegPaciente() {
                                                 <TextField type="date" fullWidth id="outlined-basic" label="Fecha de nacimiento" focused variant="outlined" value={feNacimiento} onChange={handleChangeFeNacimiento} />
                                             </Grid>
                                             <Grid container item md={2}>
-                                                <TextField fullWidth id="outlined-basic" label="Edad" focused variant="outlined" value={edad} onChange={handleChangeEdad} />
+                                                <TextField fullWidth  type="text" id="outlined-basic" label="Edad" focused variant="outlined" value={edad} onChange={handleChangeEdad} />
                                             </Grid>
                                             <Grid container item md={5}>
-                                                <TextField  fullWidth id="outlined-basic" label="Fecha de admisión" variant="outlined" 
+                                                <TextField  fullWidth id="outlined-basic" label="Nacionalidad" variant="outlined" 
                                                 select value={nacionalidad} onChange={handleChangenacionalidad} 
                                                 >
-                                                    {nationality.map((row: any, index: any) => {
+
+                                                    <MenuItem value="">
+                                                       <Button onClick={handleOpenNation} variant="contained" style={{ width: '20.5ch', height: '4.4ch', backgroundColor: "rgb(0 85 169)", color: "white", fontFamily: "Quicksand", fontWeight: "900", fontSize: "1.15rem" }}>Crear Nuevo</Button>
+                                                    </MenuItem>
+
+                                                    
+                                                    {nationList.map((row: any, index: any) => {
                                                         return (
                                                             <MenuItem key={index} value={row.value}>{row.label}</MenuItem>
                                                         )
@@ -531,7 +897,7 @@ export default function TbRegPaciente() {
                                     <Box sx={{ flexGrow: 1 }}>
                                         <Grid container spacing={2}>
                                             <Grid container item md={4} >
-                                                <TextField fullWidth id="outlined-basic" label="Correo" variant="outlined" value={correo} onChange={handleChangeCorreo} />
+                                                <TextField fullWidth id="outlined-basic"  label="Correo" variant="outlined" value={correo} onChange={handleChangeCorreo} />
                                             </Grid>
                                             <Grid container item md={4} >
                                                 <TextField fullWidth id="outlined-basic" label="Teléfono móvil" variant="outlined" value={telMovil} onChange={handleChangeTelMovil} />
@@ -1020,11 +1386,37 @@ export default function TbRegPaciente() {
                     </Modal>
                 </div>
 
+                <div>
+                    <Modal id="custom-target"
+                        keepMounted
+                        open={abrirNation}
+                        onClose={handleCloseNation}
+                        aria-labelledby="keep-mounted-modal-title"
+                        aria-describedby="keep-mounted-modal-description"
+                    >
+                        <Box sx={style}>
+                            <InputLabel style={{ color: "black", fontFamily: "Quicksand", fontWeight: "400", fontSize: "1.5rem" }} >Nueva Nacionalidad</InputLabel >
+
+                            <Grid container item xs mt={2.5}>
+                                <TextField fullWidth id="outlined-basic" label="Nombre" variant="outlined" value={nombreNation} onChange={handleChangeNombreNation} />
+                            </Grid>
+                            <Grid container item xs mt={2.5}>
+                                <Grid item xs={4} ></Grid>
+                                <Grid container item xs={8} spacing={2}>
+                                    <Grid item xs={6} >
+                                        <Button onClick={handleCloseNation} variant="contained" style={{ backgroundColor: "rgb(0 85 169)", color: "white", fontFamily: "Quicksand", fontWeight: "900", fontSize: "1rem" }}>Cancelar</Button>
+                                    </Grid>
+                                    <Grid item xs={6} >
+                                        <Button onClick={crearNation} variant="contained" style={{ backgroundColor: "rgb(0 85 169)", color: "white", fontFamily: "Quicksand", fontWeight: "900", fontSize: "1rem" }}>Guardar</Button>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+                        </Box>
+                    </Modal>
+                </div>
 
             </Contenido>
         </div>
     )
 
 }
-
-

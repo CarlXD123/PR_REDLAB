@@ -34,29 +34,49 @@ class Login extends React.Component<{ navigate: NavigateFunction, onLoadData: an
     };
     login = () => {
         Swal.showLoading()
-        console.log(this.state.email, this.state.password);
         login(this.state.email, this.state.password).then(r => {
-            if (r.status) {
+            if (r && r.status) {
                 Swal.hideLoading()
-                //corecto
+                // Correcto
                 this.props.onLoadData()
                 this.props.navigate('/apps/home');
-                //paginado- cambiar a home
+                // Paginado - cambiar a home
             } else {
-                //incorrecto- mostrar alerta
-                Swal.fire("Error", r.message.text, "error");
+                // Incorrecto - mostrar alerta
+                const errorMessage = r && r.message ? r.message.text : 'Error inesperado';
+                Swal.fire("Error", errorMessage, "error");
                 Swal.hideLoading()
             }
         });
-
-
     }
+
+
+    loginEnter = (event: any) => {
+        if (event.key === 'Enter') {
+            Swal.showLoading()
+            login(this.state.email, this.state.password).then(r => {
+                if (r.status) {
+                    Swal.hideLoading()
+                    //corecto
+                    this.props.onLoadData()
+                    this.props.navigate('/apps/home');
+                    //paginado- cambiar a home
+                } else {
+                    //incorrecto- mostrar alerta
+                    Swal.fire("Error", r.message.text, "error");
+                    Swal.hideLoading()
+                }
+            });
+        }
+    };
+
 
     render() {
 
         return (
             <div className='login-papa'>
-                <Grid container columns={{ xs: 4, sm: 8, md: 12 }} style={{ backgroundColor: '#1C66D8',
+                <Grid container columns={{ xs: 4, sm: 8, md: 12 }} style={{
+                    backgroundColor: '#1C66D8',
                     minHeight: '100vh', WebkitBackgroundSize: 'cover',
                     MozBackgroundSize: 'cover', OBackgroundSize: 'cover', backgroundSize: 'cover'
                 }}>
@@ -65,7 +85,7 @@ class Login extends React.Component<{ navigate: NavigateFunction, onLoadData: an
                     }} className='login'>
                         <div >
                             <div>
-                                <h1 style={{ fontFamily: "Quicksand", fontWeight: "500", fontSize: '1.2rem', paddingLeft: "10%", color: "white" }}>RedLab Perú <b style={{color:"red"}}>|</b> 2022</h1>
+                                <h1 style={{ fontFamily: "Quicksand", fontWeight: "500", fontSize: '1.2rem', paddingLeft: "10%", color: "white" }}>RedLab Perú <b style={{ color: "red" }}>|</b> 2022</h1>
                             </div>
                             <div style={{ paddingTop: "16%" }}>
                                 <div >
@@ -80,6 +100,7 @@ class Login extends React.Component<{ navigate: NavigateFunction, onLoadData: an
                                             id="standard-adornment-email"
                                             type={'text'}
                                             value={this.state.email}
+                                            onKeyPress={this.loginEnter}
                                             onChange={this.handleChange('email')}
                                             inputProps={{
                                                 style: {
@@ -101,6 +122,7 @@ class Login extends React.Component<{ navigate: NavigateFunction, onLoadData: an
                                         <Input
                                             type={this.state.showPassword ? 'text' : 'password'}
                                             value={this.state.password}
+                                            onKeyPress={this.loginEnter}
                                             onChange={this.handleChange('password')}
                                             inputProps={{
                                                 style: {
@@ -136,9 +158,9 @@ class Login extends React.Component<{ navigate: NavigateFunction, onLoadData: an
                                         <InputLabel style={{ fontSize: "0.95rem", padding: "2px 0px", color: "white", fontFamily: 'Quicksand', fontWeight: "450" }} >Más información</InputLabel>
                                     </div>
                                 </div>
-                                <div style={{ paddingTop: "15%",textAlign: 'left',maxWidth:"420px", paddingLeft: "12%" }}>
-                                        <h1 style={{ fontFamily: "Quicksand", fontWeight: "400", fontSize: '0.8rem', color: "white" }}>Teléfono: (01) 4233855</h1>
-                                        <h1 style={{ fontFamily: "Quicksand", fontWeight: "400", fontSize: '0.8rem', color: "white" }}>Dirección: Avenida paseo de los Andes, 830 Pueblo Libre</h1>
+                                <div style={{ paddingTop: "15%", textAlign: 'left', maxWidth: "420px", paddingLeft: "12%" }}>
+                                    <h1 style={{ fontFamily: "Quicksand", fontWeight: "400", fontSize: '0.8rem', color: "white" }}>Teléfono: (01) 4233855</h1>
+                                    <h1 style={{ fontFamily: "Quicksand", fontWeight: "400", fontSize: '0.8rem', color: "white" }}>Dirección: Avenida paseo de los Andes, 830 Pueblo Libre</h1>
                                 </div>
                             </div>
                         </div>
