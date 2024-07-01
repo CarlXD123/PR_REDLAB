@@ -3,7 +3,7 @@ import { apiFetch } from "./apiFetch";
 const PORT_BACKEND = process.env.REACT_APP_PORT_BACKEND || "5000";
 const URL_BACKEND = process.env.REACT_APP_API_URL_BACKEND || "http://localhost";
 
-export const API_URL_BACKEND = `${URL_BACKEND}:${PORT_BACKEND}/api/`;
+export const API_URL_BACKEND = `${URL_BACKEND}/api/`;
 
 export const modeloML = async (assay: string, result: number, time_range: string, gender: string, age: number) => {
   try {
